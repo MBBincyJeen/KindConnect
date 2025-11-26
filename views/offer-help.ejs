@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Offer Help</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>KindConnect</h1>
+    <div class="nav">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/add-task">Post Task</a>
+      <a href="/your-tasks">Your Tasks</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <h2>Tasks You Can Help With</h2>
+    <% if (!tasks || tasks.length === 0) { %>
+      <p>No tasks available.</p>
+    <% } %>
+
+    <% tasks.forEach(t => { %>
+      <div class="task">
+        <h3><%= t.title %></h3>
+        <p><%= t.description %></p>
+        <p><strong>Category:</strong> <%= t.category %> | <strong>Type:</strong> <%= t.type %></p>
+        <p><strong>Posted by:</strong> <%= t.postedByName %></p>
+        <p><strong>Reward:</strong> ₹<%= t.reward %></p>
+        <% if (t.attachments && t.attachments.length) { %>
+          <p>Attachments:
+            <% t.attachments.forEach(a => { %>
+              <a href="<%= a %>" target="_blank">file</a>
+            <% }) %>
+          </p>
+        <% } %>
+
+        <% if (t.status === "Not Taken") { %>
+          <form action="/take-task/<%= t._id %>" method="POST">
+            <button>Take This Task</button>
+          </form>
+        <% } else { %>
+          <p><strong>Status:</strong> <%= t.status %></p>
+          <p><strong>Taken by:</strong> <%= t.takenByName %></p>
+          <% if (t.status === "In Progress") { %>
+            <a href="/chat/<%= t._id %>">Open Chat</a>
+          <% } %>
+        <% } %>
+      </div>
+    <% }) %>
+  </main>
+</body>
+</html>

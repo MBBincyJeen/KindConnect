@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>KindConnect</h1>
+    <div class="nav">
+      <span>Welcome, <%= username %></span>
+      <a href="/add-task">Post Task</a>
+      <a href="/offer-help">Offer Help</a>
+      <a href="/your-tasks">Your Tasks</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>Your Posted Tasks</h2>
+      <% if (posted.length === 0) { %>
+        <p>No tasks posted yet.</p>
+      <% } %>
+      <% posted.forEach(t => { %>
+        <div class="task">
+          <h3><%= t.title %></h3>
+          <p><%= t.description %></p>
+          <p><strong>Category:</strong> <%= t.category %> | <strong>Type:</strong> <%= t.type %></p>
+          <p><strong>Reward:</strong> ₹<%= t.reward %></p>
+          <p><strong>Status:</strong> <%= t.status %></p>
+          <p><strong>Taken by:</strong> <%= t.takenByName || "-" %></p>
+
+          <% if (t.status === "In Progress" && t.takenById) { %>
+            <a href="/chat/<%= t._id %>">Open Chat</a>
+          <% } %>
+
+          <% if (t.status !== "Completed") { %>
+            <form action="/complete-task/<%= t._id %>" method="POST" style="display:inline;">
+              <button type="submit">Mark Completed</button>
+            </form>
+          <% } %>
+
+          <form action="/delete-task/<%= t._id %>" method="POST" style="display:inline;">
+            <button type="submit">Delete</button>
+          </form>
+        </div>
+      <% }) %>
+    </section>
+
+    <section>
+      <h2>Recent Tasks by Others</h2>
+      <% recentOthers.forEach(t => { %>
+        <div class="task">
+          <h3><%= t.title %></h3>
+          <p><%= t.description %></p>
+          <p><strong>Posted by:</strong> <%= t.postedByName %></p>
+          <p><strong>Status:</strong> <%= t.status %></p>
+        </div>
+      <% }) %>
+    </section>
+  </main>
+</body>
+</html>

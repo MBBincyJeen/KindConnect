@@ -1,0 +1,317 @@
+/*
+ * KindConnect: Premium Light Mode Aesthetic
+ * Focuses on clean whitespace, depth, elegance, and responsive interaction.
+ */
+
+:root {
+  /* Color Palette */
+  --color-light-bg: #f5f7f9;        /* Off-white canvas */
+  --color-card-bg: #ffffff;        /* Pure white card base */
+  --color-primary-accent: #00897b;   /* Elegant Deep Teal/Green-Blue */
+  --color-secondary-accent: #263238; /* Dark Slate for text and primary elements */
+  --color-text-dark: #263238;       /* Very dark text */
+  --color-text-muted: #78909c;      /* Soft gray for subtle text */
+  --color-success: #43a047;         /* Subtle Green */
+  --color-error: #e53935;           /* Subtle Red */
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Professional font */
+  background: var(--color-light-bg);
+  margin: 0;
+  padding: 0;
+  color: var(--color-text-dark);
+  line-height: 1.6;
+  transition: background 0.5s ease;
+  font-weight: 300; /* Lighter base font weight */
+}
+
+/* --- Global Elements & Typography --- */
+a {
+  color: var(--color-primary-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+a:hover {
+  color: #00695c;
+  text-decoration: underline;
+}
+
+/* --- Top Bar (Header) --- */
+.topbar {
+  background: var(--color-secondary-accent); /* Dark Slate header */
+  color: var(--color-light-bg);
+  padding: 18px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar h1 {
+  margin: 0;
+  font-size: 1.9em;
+  font-weight: 700;
+  color: var(--color-primary-accent); /* Teal logo */
+}
+.topbar .nav a {
+  color: var(--color-light-bg);
+  margin-left: 18px;
+  background: transparent;
+  padding: 10px 15px;
+  border-radius: 6px;
+  transition: background 0.3s ease, transform 0.2s ease;
+  font-weight: 400;
+}
+.topbar .nav a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05); /* Subtle scale animation */
+}
+.topbar span {
+  color: #b0bec5;
+  font-weight: 400;
+  margin-right: 15px;
+}
+
+/* --- General Layout and Cards --- */
+.container {
+  max-width: 1100px; /* Slightly wider container */
+  margin: 40px auto;
+  padding: 0 20px;
+}
+.card {
+  background: var(--color-card-bg);
+  padding: 35px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg); /* Prominent, soft shadow */
+  margin-bottom: 30px;
+  border: 1px solid #eceff1; /* Very light border for depth */
+}
+.card h2 {
+  color: var(--color-secondary-accent);
+  margin-top: 0;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 15px;
+  margin-bottom: 25px;
+  font-weight: 500;
+}
+
+/* --- Forms and Inputs --- */
+input, textarea, select {
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  box-sizing: border-box;
+  background: var(--color-light-bg);
+  color: var(--color-text-dark);
+  font-weight: 400;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-primary-accent);
+  box-shadow: 0 0 0 4px rgba(0, 137, 123, 0.1); /* Subtle ring effect */
+  outline: none;
+  background: var(--color-card-bg);
+}
+label {
+  display: block;
+  margin-top: 20px;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: var(--color-text-dark);
+}
+
+/* --- Buttons --- */
+button {
+  background: var(--color-primary-accent); /* Teal button */
+  color: var(--color-card-bg);
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+  margin-top: 15px;
+  letter-spacing: 0.5px;
+}
+button:hover {
+  background: #00695c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 137, 123, 0.4);
+}
+button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+.card form button {
+  width: 100%;
+  margin-top: 30px;
+}
+
+/* --- Task List Items --- */
+.task {
+  background: var(--color-card-bg);
+  padding: 25px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  border-left: 6px solid var(--color-primary-accent);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.task:hover {
+  transform: translateY(-5px); /* Noticeable lift */
+  box-shadow: var(--shadow-md);
+}
+.task h3 {
+  color: var(--color-secondary-accent);
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.task p {
+  margin: 5px 0;
+  color: var(--color-text-muted);
+}
+.task strong {
+  color: var(--color-text-dark);
+}
+
+/* --- Links and Errors --- */
+.error {
+  color: var(--color-error);
+  background: #ffebee;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #ffcdd2;
+  font-weight: 400;
+}
+
+/* --- Chat Styling --- */
+.chat-box {
+  background: #e0f2f1; /* Very light, soft teal background for chat area */
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  max-height: 550px;
+  overflow-y: auto;
+  border: 1px solid #b2dfdb;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+}
+/* Scrollbar styling */
+.chat-box::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-box::-webkit-scrollbar-thumb {
+  background: #80cbc4;
+  border-radius: 10px;
+}
+.chat-box::-webkit-scrollbar-track {
+  background: #e0f2f1;
+}
+
+.msg {
+  padding: 12px 18px;
+  margin-bottom: 12px;
+  border-radius: 18px;
+  max-width: 75%;
+  word-wrap: break-word;
+  font-size: 0.9em;
+  font-weight: 400;
+  animation: fadeIn 0.4s ease-out;
+  box-shadow: var(--shadow-sm);
+}
+.msg.me {
+  background: #b2dfdb; /* Lighter Teal for sender */
+  align-self: flex-end;
+  margin-left: auto;
+  text-align: left;
+  border-bottom-right-radius: 4px;
+}
+.msg.them {
+  background: var(--color-card-bg); /* White for others' messages */
+  align-self: flex-start;
+  margin-right: auto;
+  text-align: left;
+  border-bottom-left-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+.msg strong {
+  font-weight: 500;
+  color: var(--color-text-dark);
+}
+.msg small {
+  display: block;
+  font-size: 0.7em;
+  color: var(--color-text-muted);
+  margin-top: 5px;
+}
+.chat-box + form {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    margin-top: 20px;
+    background: var(--color-card-bg);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: var(--shadow-sm);
+}
+.chat-box + form textarea {
+    flex-grow: 1;
+    min-height: 40px;
+    padding: 10px;
+    margin: 0;
+}
+.chat-box + form button {
+    height: 44px;
+    padding: 0 20px;
+    margin: 0;
+}
+.chat-box + form input[type="file"] {
+    width: auto;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+}
+.chat-box + form input[type="file"]::file-selector-button {
+  background: #eceff1;
+  color: var(--color-text-dark);
+  border: 1px solid #cfd8dc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 400;
+  transition: background 0.3s ease;
+}
+.chat-box + form input[type="file"]::file-selector-button:hover {
+    background: #cfd8dc;
+}
+
+/* --- Keyframe Animations --- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes flashAccent {
+    0%, 100% { border-color: #eceff1; }
+    50% { border-color: rgba(0, 137, 123, 0.6); }
+}
+
+/* Apply pulse animation to dashboard tasks for a 'live' feeling */
+.task:nth-child(even) { animation: flashAccent 6s infinite alternate ease-in-out; }
