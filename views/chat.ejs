@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Chat</title>
+  <title>Chat - KindConnect</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -17,29 +17,172 @@
   </header>
 
   <main class="container">
-    <h2>Chat for: <%= task.title %></h2>
-    <p>Poster: <%= task.postedByName %> | Helper: <%= task.takenByName %></p>
-
-    <div class="chat-box">
-      <% if (!task.messages || task.messages.length === 0) { %>
-        <p>No messages yet.</p>
-      <% } else { %>
-        <% task.messages.forEach(m => { %>
-          <div class="msg <%= m.senderName === username ? 'me' : 'them' %>">
-            <p><strong><%= m.senderName %></strong> <small><%= new Date(m.createdAt).toLocaleString() %></small></p>
-            <% if (m.text) { %><p><%= m.text %></p><% } %>
-            <% if (m.file) { %><p><a href="<%= m.file %>" target="_blank">Attachment</a></p><% } %>
+    <div class="chat-container">
+      <div class="chat-header">
+        <div>
+          <h2><%= task.title %></h2>
+          <p>Poster: <strong><%= task.postedByName %></strong> | Helper: <strong><%= task.takenByName || "Not Assigned" %></strong></p>
+        </div>
+        <div class="chat-meta">
+          <div class="chat-sync-status" title="Connection status">
+            <div class="chat-sync-dot"></div>
+            <span>Live Sync</span>
           </div>
-        <% }) %>
-      <% } %>
+          <span class="chat-status-badge <%= task.status === 'Completed' ? 'completed' : 'in-progress' %>">
+            <%= task.status %>
+          </span>
+        </div>
+      </div>
+
+      <div class="chat-box">
+        <% if (!task.messages || task.messages.length === 0) { %>
+          <div class="empty-chat-message">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            <p>No messages yet. Say hello to start the conversation!</p>
+          </div>
+        <% } else { %>
+          <% task.messages.forEach(m => { %>
+            <div class="msg <%= m.senderName === username ? 'me' : 'them' %>">
+              <strong><%= m.senderName %></strong>
+              <% if (m.text) { %>
+                <p><%= m.text %></p>
+              <% } %>
+              <% if (m.file) { %>
+                <a href="<%= m.file %>" target="_blank" class="attachment-link">
+                  📎 View Attachment
+                </a>
+              <% } %>
+              <small><%= new Date(m.createdAt).toLocaleString() %></small>
+            </div>
+          <% }) %>
+        <% } %>
+      </div>
+
+      <form action="/chat/<%= task._id %>" method="POST" enctype="multipart/form-data" class="chat-input-form" id="chatForm">
+        <label for="chat-file" class="chat-file-upload-label" title="Attach file">📎</label>
+        <input type="file" name="file" id="chat-file" class="chat-file-input">
+        
+        <div class="file-selected-indicator" id="file-indicator">
+          <span></span>
+          <button type="button" id="clear-file" title="Remove attachment">×</button>
+        </div>
+
+        <textarea name="text" class="chat-input-textarea" placeholder="Type a message... (Press Enter to send)" required></textarea>
+        
+        <button class="chat-send-btn" type="submit" title="Send message">➤</button>
+      </form>
     </div>
-
-    <form action="/chat/<%= task._id %>" method="POST" enctype="multipart/form-data">
-      <textarea name="text" placeholder="Write a message"></textarea><br>
-      <input type="file" name="file"><br>
-      <button>Send</button>
-    </form>
-
   </main>
+
+  <script>
+    const chatBox = document.querySelector('.chat-box');
+    const chatForm = document.getElementById('chatForm');
+    const textarea = document.querySelector('.chat-input-textarea');
+    const fileInput = document.getElementById('chat-file');
+    const fileIndicator = document.getElementById('file-indicator');
+    const clearFileBtn = document.getElementById('clear-file');
+
+    function scrollToBottom() {
+      if (chatBox) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    // Scroll to bottom and focus on load
+    window.addEventListener('DOMContentLoaded', () => {
+      scrollToBottom();
+      if (textarea) textarea.focus();
+    });
+
+    // Submit form on Enter key (without Shift)
+    if (textarea) {
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (textarea.value.trim() || fileInput.files.length > 0) {
+            chatForm.submit();
+          }
+        }
+      });
+    }
+
+    // File input selection UI helper
+    if (fileInput) {
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length > 0) {
+          const fileName = fileInput.files[0].name;
+          const shortName = fileName.length > 20 ? fileName.substring(0, 17) + '...' : fileName;
+          fileIndicator.querySelector('span').innerText = '📎 ' + shortName;
+          fileIndicator.classList.add('active');
+          textarea.removeAttribute('required'); // If there is an attachment, message text can be empty
+        } else {
+          fileIndicator.classList.remove('active');
+          textarea.setAttribute('required', 'required');
+        }
+      });
+    }
+
+    // Clear file selection
+    if (clearFileBtn) {
+      clearFileBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        fileInput.value = '';
+        fileIndicator.classList.remove('active');
+        if (!textarea.value.trim()) {
+          textarea.setAttribute('required', 'required');
+        }
+      });
+    }
+
+    // Clear textarea and indicator on submit to prevent visual delay
+    chatForm.addEventListener('submit', () => {
+      setTimeout(() => {
+        textarea.value = '';
+        fileInput.value = '';
+        fileIndicator.classList.remove('active');
+      }, 50);
+    });
+
+    // Polling script: checks for new messages every 4 seconds dynamically
+    let isPolling = true;
+    setInterval(() => {
+      if (!isPolling) return;
+      
+      fetch(window.location.href)
+        .then(response => {
+          if (!response.ok) throw new Error('Network response not ok');
+          return response.text();
+        })
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newChatBox = doc.querySelector('.chat-box');
+          const currentChatBox = document.querySelector('.chat-box');
+          const newHeaderMeta = doc.querySelector('.chat-header');
+          const currentHeaderMeta = document.querySelector('.chat-header');
+
+          if (newChatBox && currentChatBox) {
+            // Check if contents are different before replacing
+            if (newChatBox.innerHTML.trim() !== currentChatBox.innerHTML.trim()) {
+              // Save scroll state before update to see if user is looking at history
+              const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
+              currentChatBox.innerHTML = newChatBox.innerHTML;
+              
+              if (isAtBottom) {
+                scrollToBottom();
+              }
+            }
+          }
+          
+          if (newHeaderMeta && currentHeaderMeta) {
+            if (newHeaderMeta.innerHTML.trim() !== currentHeaderMeta.innerHTML.trim()) {
+              currentHeaderMeta.innerHTML = newHeaderMeta.innerHTML;
+            }
+          }
+        })
+        .catch(err => console.warn('Sync warning:', err));
+    }, 4000);
+  </script>
 </body>
 </html>
+

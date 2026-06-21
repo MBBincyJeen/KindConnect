@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Offer Help</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offer Help — KindConnect</title>
+  <meta name="description" content="Browse tasks posted by your community and offer your help on KindConnect.">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -10,44 +12,67 @@
     <h1>KindConnect</h1>
     <div class="nav">
       <a href="/dashboard">Dashboard</a>
-      <a href="/add-task">Post Task</a>
+      <a href="/add-task">＋ Post Task</a>
       <a href="/your-tasks">Your Tasks</a>
       <a href="/logout">Logout</a>
     </div>
   </header>
 
   <main class="container">
-    <h2>Tasks You Can Help With</h2>
+    <div class="section-header">
+      <h2>
+        🤲 Tasks You Can Help With
+        <span class="count-badge"><%= tasks.length %></span>
+      </h2>
+    </div>
+
     <% if (!tasks || tasks.length === 0) { %>
-      <p>No tasks available.</p>
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <p>No tasks available right now. Check back soon!</p>
+      </div>
     <% } %>
 
     <% tasks.forEach(t => { %>
       <div class="task">
-        <h3><%= t.title %></h3>
+        <div class="task-top">
+          <h3><%= t.title %></h3>
+          <span class="status-badge <%= t.status === 'Not Taken' ? 'status-not-taken' : 'status-in-progress' %>">
+            <%= t.status %>
+          </span>
+        </div>
+
         <p><%= t.description %></p>
-        <p><strong>Category:</strong> <%= t.category %> | <strong>Type:</strong> <%= t.type %></p>
-        <p><strong>Posted by:</strong> <%= t.postedByName %></p>
-        <p><strong>Reward:</strong> ₹<%= t.reward %></p>
+
+        <div class="task-meta">
+          <span class="tag tag-category">📂 <%= t.category %></span>
+          <span class="tag tag-type">🔖 <%= t.type %></span>
+          <span class="tag tag-reward">💰 ₹<%= t.reward %></span>
+          <span class="tag tag-category">👤 <%= t.postedByName %></span>
+        </div>
+
         <% if (t.attachments && t.attachments.length) { %>
-          <p>Attachments:
+          <div style="margin: 10px 0; font-size: 0.85rem; color: var(--color-muted);">
+            📎 Attachments:
             <% t.attachments.forEach(a => { %>
-              <a href="<%= a %>" target="_blank">file</a>
+              <a href="<%= a %>" target="_blank" style="margin-left: 6px;">View file</a>
             <% }) %>
-          </p>
+          </div>
         <% } %>
 
-        <% if (t.status === "Not Taken") { %>
-          <form action="/take-task/<%= t._id %>" method="POST">
-            <button>Take This Task</button>
-          </form>
-        <% } else { %>
-          <p><strong>Status:</strong> <%= t.status %></p>
-          <p><strong>Taken by:</strong> <%= t.takenByName %></p>
-          <% if (t.status === "In Progress") { %>
-            <a href="/chat/<%= t._id %>">Open Chat</a>
+        <div class="task-actions">
+          <% if (t.status === "Not Taken") { %>
+            <form action="/take-task/<%= t._id %>" method="POST">
+              <button type="submit" class="btn btn-primary">🙋 Take This Task</button>
+            </form>
+          <% } else { %>
+            <% if (t.status === "In Progress" && currentUser && t.takenById && t.takenById.toString() === currentUser.id) { %>
+              <a href="/chat/<%= t._id %>" class="btn btn-chat">💬 Open Chat</a>
+            <% } else if (t.status === "In Progress") { %>
+              <span style="font-size:0.85rem; color: var(--color-muted);">🤝 Being helped by <%= t.takenByName %></span>
+            <% } %>
           <% } %>
-        <% } %>
+        </div>
       </div>
     <% }) %>
   </main>

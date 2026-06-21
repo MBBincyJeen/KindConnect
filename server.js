@@ -104,7 +104,7 @@ app.post("/login", async (req, res) => {
     if (!ok) return res.render("login", { error: "Invalid credentials" });
 
     req.session.user = {
-      id: user._id,
+      id: user._id.toString(),  // always store as plain string
       username: user.username,
       location: user.location,
     };
@@ -236,7 +236,7 @@ app.get("/chat/:taskId", requireLogin, async (req, res) => {
     const task = await Task.findById(req.params.taskId);
     if (!task) return res.status(404).send("Task not found");
 
-    const uid = req.session.user.id;
+    const uid = req.session.user.id.toString();
     const allowed =
       (task.postedById && task.postedById.toString() === uid) ||
       (task.takenById && task.takenById.toString() === uid);
@@ -259,7 +259,7 @@ app.post(
       const task = await Task.findById(req.params.taskId);
       if (!task) return res.status(404).send("Task not found");
 
-      const uid = req.session.user.id;
+      const uid = req.session.user.id.toString();
       const allowed =
         (task.postedById && task.postedById.toString() === uid) ||
         (task.takenById && task.takenById.toString() === uid);

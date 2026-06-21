@@ -1,16 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard — KindConnect</title>
+  <meta name="description" content="Manage your posted tasks and browse community activity on KindConnect.">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <header class="topbar">
     <h1>KindConnect</h1>
     <div class="nav">
-      <span>Welcome, <%= username %></span>
-      <a href="/add-task">Post Task</a>
+      <span>👋 <%= username %></span>
+      <a href="/add-task">＋ Post Task</a>
       <a href="/offer-help">Offer Help</a>
       <a href="/your-tasks">Your Tasks</a>
       <a href="/logout">Logout</a>
@@ -18,48 +20,102 @@
   </header>
 
   <main class="container">
+
+    <!-- Profile Banner -->
+    <div class="profile-banner">
+      <div class="profile-avatar"><%= username.charAt(0).toUpperCase() %></div>
+      <div class="profile-info">
+        <h2><%= username %></h2>
+        <p>📍 <%= location %></p>
+      </div>
+      <a href="/add-task" class="btn-post-task">＋ Post a Task</a>
+    </div>
+
+    <!-- Your Posted Tasks -->
     <section>
-      <h2>Your Posted Tasks</h2>
+      <div class="section-header">
+        <h2>
+          🗂 Your Posted Tasks
+          <span class="count-badge"><%= posted.length %></span>
+        </h2>
+      </div>
+
       <% if (posted.length === 0) { %>
-        <p>No tasks posted yet.</p>
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+          <p>No tasks posted yet. <a href="/add-task">Post your first task →</a></p>
+        </div>
       <% } %>
+
       <% posted.forEach(t => { %>
         <div class="task">
-          <h3><%= t.title %></h3>
+          <div class="task-top">
+            <h3><%= t.title %></h3>
+            <span class="status-badge <%= t.status === 'Not Taken' ? 'status-not-taken' : t.status === 'In Progress' ? 'status-in-progress' : 'status-completed' %>">
+              <%= t.status %>
+            </span>
+          </div>
+
           <p><%= t.description %></p>
-          <p><strong>Category:</strong> <%= t.category %> | <strong>Type:</strong> <%= t.type %></p>
-          <p><strong>Reward:</strong> ₹<%= t.reward %></p>
-          <p><strong>Status:</strong> <%= t.status %></p>
-          <p><strong>Taken by:</strong> <%= t.takenByName || "-" %></p>
 
-          <% if (t.status === "In Progress" && t.takenById) { %>
-            <a href="/chat/<%= t._id %>">Open Chat</a>
-          <% } %>
+          <div class="task-meta">
+            <span class="tag tag-category">📂 <%= t.category %></span>
+            <span class="tag tag-type">🔖 <%= t.type %></span>
+            <span class="tag tag-reward">💰 ₹<%= t.reward %></span>
+            <% if (t.takenByName) { %>
+              <span class="tag tag-category">🤝 <%= t.takenByName %></span>
+            <% } %>
+          </div>
 
-          <% if (t.status !== "Completed") { %>
-            <form action="/complete-task/<%= t._id %>" method="POST" style="display:inline;">
-              <button type="submit">Mark Completed</button>
+          <div class="task-actions">
+            <% if (t.status === "In Progress" && t.takenById) { %>
+              <a href="/chat/<%= t._id %>" class="btn btn-chat">💬 Open Chat</a>
+            <% } %>
+
+            <% if (t.status !== "Completed") { %>
+              <form action="/complete-task/<%= t._id %>" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-secondary">✓ Mark Completed</button>
+              </form>
+            <% } %>
+
+            <form action="/delete-task/<%= t._id %>" method="POST" style="display:inline;"
+              onsubmit="return confirm('Delete this task?')">
+              <button type="submit" class="btn btn-danger">🗑 Delete</button>
             </form>
-          <% } %>
-
-          <form action="/delete-task/<%= t._id %>" method="POST" style="display:inline;">
-            <button type="submit">Delete</button>
-          </form>
+          </div>
         </div>
       <% }) %>
     </section>
 
-    <section>
-      <h2>Recent Tasks by Others</h2>
+    <!-- Recent Tasks by Others -->
+    <section style="margin-top: 40px;">
+      <div class="section-header">
+        <h2>🌍 Recent Community Tasks</h2>
+      </div>
+
+      <% if (recentOthers.length === 0) { %>
+        <div class="empty-state">
+          <p>No community tasks yet. Be the first to <a href="/add-task">post one!</a></p>
+        </div>
+      <% } %>
+
       <% recentOthers.forEach(t => { %>
         <div class="task">
-          <h3><%= t.title %></h3>
+          <div class="task-top">
+            <h3><%= t.title %></h3>
+            <span class="status-badge <%= t.status === 'Not Taken' ? 'status-not-taken' : t.status === 'In Progress' ? 'status-in-progress' : 'status-completed' %>">
+              <%= t.status %>
+            </span>
+          </div>
           <p><%= t.description %></p>
-          <p><strong>Posted by:</strong> <%= t.postedByName %></p>
-          <p><strong>Status:</strong> <%= t.status %></p>
+          <div class="task-meta">
+            <span class="tag tag-category">👤 <%= t.postedByName %></span>
+            <span class="tag tag-type">🔖 <%= t.type %></span>
+          </div>
         </div>
       <% }) %>
     </section>
+
   </main>
 </body>
 </html>

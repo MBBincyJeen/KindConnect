@@ -1,23 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register — KindConnect</title>
+  <meta name="description" content="Join KindConnect and start helping or getting help from your local community.">
   <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
-  <div class="card">
-    <h2>Register</h2>
+<body class="auth-body">
+  <div class="auth-card">
+    <div class="auth-logo"><span>KindConnect</span></div>
+    <p class="auth-tagline">Lend a hand. Get help. Build kindness.</p>
+
+    <h2>Create account</h2>
+    <p class="auth-subtitle">Join your community today</p>
+
     <% if (typeof error !== 'undefined' && error) { %>
-      <p class="error"><%= error %></p>
+      <p class="error">⚠ <%= error %></p>
     <% } %>
+
     <form action="/register" method="POST">
-      <input name="username" placeholder="Choose username" required>
-      <input name="password" placeholder="Choose password" type="password" required>
-      <input name="location" placeholder="Your location (city or area)" required>
-      <button>Register</button>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" placeholder="Choose a username" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Choose a password" required autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="location">Location</label>
+        <input id="location" name="location" type="text" placeholder="Your city or area" required>
+      </div>
+      <button class="btn-primary" type="submit">Create Account →</button>
     </form>
-    <p>Already have account? <a href="/login">Login</a></p>
+
+    <p class="auth-link">Already have an account? <a href="/login">Sign in</a></p>
   </div>
 </body>
 </html>
