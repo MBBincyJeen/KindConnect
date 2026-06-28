@@ -4,34 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login — KindConnect</title>
-  <meta name="description" content="Log in to KindConnect to lend a hand or get help from your community.">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body class="auth-body">
-  <div class="auth-card">
-    <div class="auth-logo"><span>KindConnect</span></div>
-    <p class="auth-tagline">Lend a hand. Get help. Build kindness.</p>
+  <main class="container">
+    <div class="auth-card">
+      <div class="auth-logo"><span>KindConnect</span></div>
+      <p class="auth-tagline">Connecting learners with educators</p>
+      
+      <h2>Welcome Back</h2>
+      <p class="auth-subtitle">Login to your account</p>
 
-    <h2>Welcome back</h2>
-    <p class="auth-subtitle">Sign in to your account</p>
+      <% if (error) { %><div class="error">Error: <%= error %></div><% } %>
 
-    <% if (typeof error !== 'undefined' && error) { %>
-      <p class="error">⚠ <%= error %></p>
-    <% } %>
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" name="username" placeholder="Enter your username" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="Enter your password" required>
+        </div>
+        
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Login →</button>
+      </form>
 
-    <form action="/login" method="POST">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" placeholder="Enter your username" required autocomplete="username">
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" placeholder="Enter your password" required autocomplete="current-password">
-      </div>
-      <button class="btn-primary" type="submit">Sign In →</button>
-    </form>
-
-    <p class="auth-link">New to KindConnect? <a href="/register">Create an account</a></p>
-  </div>
+      <p class="auth-link" style="margin-top: 20px;">
+        Don't have an account? <a href="/register">Create one</a>
+      </p>
+    </div>
+  </main>
 </body>
 </html>

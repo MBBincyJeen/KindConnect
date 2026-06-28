@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Tutoring Session — KindConnect</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body {
+      background: #0f172a;
+      color: #f1f5f9;
+    }
+
+    .session-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 64px);
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .session-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 12px;
+    }
+
+    .session-title h2 {
+      font-size: 1.25rem;
+      margin: 0;
+      color: #fff;
+    }
+
+    .session-title p {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin: 4px 0 0 0;
+    }
+
+    .connection-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e2e8f0;
+    }
+
+    .status-connecting .status-dot {
+      background: #ffb300;
+      animation: pulseConnecting 1.5s infinite;
+    }
+
+    .status-connected .status-dot {
+      background: #43a047;
+    }
+
+    .status-disconnected .status-dot {
+      background: #e53935;
+    }
+
+    @keyframes pulseConnecting {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+
+    .video-grid {
+      flex-grow: 1;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      position: relative;
+      background: #020617;
+      border-radius: var(--radius-lg);
+      border: 1px solid #334155;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .video-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .single-layout .remote-video-wrap {
+        grid-column: 1 / -1;
+      }
+    }
+
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .video-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-label {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #fff;
+      z-index: 10;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .video-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      z-index: 5;
+      color: #64748b;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .video-placeholder span.avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .controls-panel {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: #1e293b;
+      border-radius: var(--radius-lg);
+      border: 1px solid #334155;
+      flex-shrink: 0;
+    }
+
+    .control-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid #475569;
+      background: #334155;
+      color: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .control-btn:hover {
+      background: #475569;
+      transform: scale(1.05);
+    }
+
+    .control-btn.active-off {
+      background: #e53935;
+      border-color: #ef5350;
+    }
+
+    .control-btn.active-off:hover {
+      background: #d32f2f;
+    }
+
+    .control-btn-leave {
+      background: #e53935;
+      border-color: #ef5350;
+      width: auto;
+      padding: 0 24px;
+      border-radius: var(--radius-full);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-btn-leave:hover {
+      background: #d32f2f;
+      box-shadow: 0 4px 12px rgba(229, 57, 53, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="session-container">
+    <div class="session-header">
+      <div class="session-title">
+        <h2>Live Session: <%= task.title %></h2>
+        <p>Subject: <%= task.subject %> | Grade/Level: <%= task.educationLevel %> | Mode: Online Live Tutoring</p>
+      </div>
+
+      <div class="connection-status status-connecting" id="connStatus">
+        <div class="status-dot"></div>
+        <span id="connStatusText">Connecting...</span>
+      </div>
+    </div>
+
+    <!-- Video Grid -->
+    <div class="video-grid" id="videoGrid">
+      
+      <!-- Local Stream Screen -->
+      <div class="video-wrap">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <div class="video-label">You (My Stream)</div>
+        <div class="video-placeholder" id="localPlaceholder">
+          <span class="avatar"><%= username.charAt(0).toUpperCase() %></span>
+          <span>Camera turned off</span>
+        </div>
+      </div>
+
+      <!-- Remote Stream Screen -->
+      <div class="video-wrap remote-video-wrap">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="video-label" id="remoteLabel">Instructor / Student</div>
+        <div class="video-placeholder" id="remotePlaceholder">
+          <span class="avatar">?</span>
+          <span id="remotePlaceholderText">Awaiting connection...</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Control Actions Panel -->
+    <div class="controls-panel">
+      
+      <button class="control-btn" id="btnAudio" title="Toggle audio stream">Mute</button>
+      
+      <button class="control-btn" id="btnVideo" title="Toggle video stream">Stop Cam</button>
+
+      <a href="/chat/<%= task._id %>" class="control-btn control-btn-leave" title="Leave live tutor session">
+        Leave Session
+      </a>
+
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const taskId = '<%= task._id %>';
+    const username = '<%= username %>';
+    const currentUserId = '<%= currentUser.id %>';
+
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const connStatus = document.getElementById('connStatus');
+    const connStatusText = document.getElementById('connStatusText');
+
+    const btnAudio = document.getElementById('btnAudio');
+    const btnVideo = document.getElementById('btnVideo');
+
+    const localPlaceholder = document.getElementById('localPlaceholder');
+    const remotePlaceholder = document.getElementById('remotePlaceholder');
+    const remotePlaceholderText = document.getElementById('remotePlaceholderText');
+    const remoteLabel = document.getElementById('remoteLabel');
+
+    let localStream = null;
+    let peerConnection = null;
+    let pendingCandidates = [];
+    let audioEnabled = true;
+    let videoEnabled = true;
+
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+
+    // Get camera and microphone permissions
+    async function startMedia() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+        localPlaceholder.style.display = 'none';
+
+        // Join signaling room
+        socket.emit('join-session', taskId);
+        updateStatus('connecting', 'Awaiting peer connection…');
+      } catch (err) {
+        console.error('Camera/mic access error:', err);
+        localPlaceholder.querySelector('span:last-child').textContent = 'Camera/Mic blocked or unavailable';
+        updateStatus('disconnected', 'Media device access required');
+      }
+    }
+
+    function updateStatus(stateClass, text) {
+      connStatus.className = `connection-status status-${stateClass}`;
+      connStatusText.textContent = text;
+    }
+
+    // Toggle Audio Track
+    btnAudio.addEventListener('click', () => {
+      audioEnabled = !audioEnabled;
+      if (localStream) {
+        localStream.getAudioTracks().forEach(track => track.enabled = audioEnabled);
+      }
+      btnAudio.textContent = audioEnabled ? 'Mute' : 'Unmute';
+      btnAudio.classList.toggle('active-off', !audioEnabled);
+    });
+
+    // Toggle Video Track
+    btnVideo.addEventListener('click', () => {
+      videoEnabled = !videoEnabled;
+      if (localStream) {
+        localStream.getVideoTracks().forEach(track => track.enabled = videoEnabled);
+      }
+      localVideo.style.display = videoEnabled ? 'block' : 'none';
+      localPlaceholder.style.display = videoEnabled ? 'none' : 'flex';
+      btnVideo.textContent = videoEnabled ? 'Stop Cam' : 'Start Cam';
+      btnVideo.classList.toggle('active-off', !videoEnabled);
+    });
+
+    // Create RTCPeerConnection
+    function createPeerConnection(isInitiator) {
+      if (peerConnection) return;
+
+      peerConnection = new RTCPeerConnection(configuration);
+
+      // Add local stream tracks to connection
+      if (localStream) {
+        localStream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, localStream);
+        });
+      }
+
+      // Send ICE candidates as they are discovered
+      peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+          socket.emit('signal', {
+            taskId,
+            candidate: event.candidate
+          });
+        }
+      };
+
+      // Set remote stream to remote video element
+      peerConnection.ontrack = (event) => {
+        remoteVideo.srcObject = event.streams[0];
+        remotePlaceholder.style.display = 'none';
+        remotePlaceholderText.textContent = 'Live tutor connected';
+        updateStatus('connected', 'Connected');
+      };
+
+      peerConnection.onconnectionstatechange = () => {
+        switch (peerConnection.connectionState) {
+          case 'connected':
+            updateStatus('connected', 'Live session established');
+            break;
+          case 'disconnected':
+          case 'failed':
+            updateStatus('disconnected', 'Peer disconnected');
+            remotePlaceholder.style.display = 'flex';
+            remotePlaceholderText.textContent = 'Peer disconnected';
+            break;
+          case 'closed':
+            updateStatus('disconnected', 'Session closed');
+            break;
+          default:
+            updateStatus('connecting', 'Connecting...');
+        }
+      };
+
+      peerConnection.onsignalingstatechange = () => {
+        console.log('Signaling state:', peerConnection.signalingState);
+      };
+
+      peerConnection.onicegatheringstatechange = () => {
+        console.log('ICE gathering:', peerConnection.iceGatheringState);
+      };
+
+      // If initiator, create and send local description offer
+      if (isInitiator) {
+        peerConnection.createOffer()
+          .then(offer => peerConnection.setLocalDescription(offer))
+          .then(() => {
+            socket.emit('signal', {
+              taskId,
+              sdp: peerConnection.localDescription
+            });
+          })
+          .catch(err => console.error('Error creating SDP offer:', err));
+      }
+    }
+
+    function flushPendingCandidates() {
+      if (!peerConnection || !pendingCandidates.length) return;
+      pendingCandidates.forEach(async (candidate) => {
+        try {
+          await peerConnection.addIceCandidate(candidate);
+        } catch (err) {
+          console.warn('Delayed ICE candidate failed:', err);
+        }
+      });
+      pendingCandidates = [];
+    }
+
+    socket.on('connect', () => {
+      console.log('Live session socket connected:', socket.id);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Live session socket connection failed:', err);
+      updateStatus('disconnected', 'Signaling connection failed');
+    });
+
+    socket.on('session-start', (data) => {
+      console.log('Session start event received:', data);
+      createPeerConnection(data.initiator);
+      if (data.initiator) {
+        updateStatus('connecting', 'Preparing your live meeting…');
+      } else {
+        updateStatus('connecting', 'Waiting for your tutor to connect…');
+      }
+    });
+
+    // Socket Event: WebRTC signal payload from peer
+    socket.on('signal', async (data) => {
+      console.log('Received signal data:', data);
+      if (!peerConnection) {
+        createPeerConnection(false);
+      }
+
+      try {
+        if (data.sdp) {
+          await peerConnection.setRemoteDescription(data.sdp);
+          flushPendingCandidates();
+
+          if (peerConnection.remoteDescription.type === 'offer') {
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('signal', {
+              taskId,
+              sdp: peerConnection.localDescription
+            });
+          }
+        } else if (data.candidate) {
+          const candidate = new RTCIceCandidate(data.candidate);
+          if (!peerConnection.remoteDescription || !peerConnection.remoteDescription.type) {
+            pendingCandidates.push(candidate);
+          } else {
+            await peerConnection.addIceCandidate(candidate);
+          }
+        }
+      } catch (err) {
+        console.error('Error handling WebRTC signal:', err);
+      }
+    });
+
+    // Start video session on page load
+    startMedia();
+  </script>
+</body>
+</html>

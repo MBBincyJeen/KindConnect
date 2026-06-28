@@ -3,59 +3,61 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Your Tasks — KindConnect</title>
-  <meta name="description" content="See the tasks you have accepted and chat with task posters on KindConnect.">
+  <title>My Chats — KindConnect</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <h1>KindConnect</h1>
-    <div class="nav">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/add-task">＋ Post Task</a>
-      <a href="/offer-help">Offer Help</a>
-      <a href="/logout">Logout</a>
-    </div>
-  </header>
+  <%- include('partials/navbar') %>
 
   <main class="container">
     <div class="section-header">
       <h2>
-        📋 Tasks You Accepted
+        My Active Chats
         <span class="count-badge"><%= tasks.length %></span>
       </h2>
     </div>
 
     <% if (!tasks || tasks.length === 0) { %>
       <div class="empty-state">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        <p>You haven't accepted any tasks yet. <a href="/offer-help">Browse tasks to help →</a></p>
+        <p>No active chats yet. Browse tutoring posts to connect.</p>
       </div>
+    <% } else { %>
+      <% tasks.forEach(t => { %>
+        <div class="task">
+          <div class="task-top">
+            <h3><%= t.title %></h3>
+            <span class="status-badge <%= t.status === 'In Progress' ? 'status-in-progress' : 'status-completed' %>">
+              <%= t.status %>
+            </span>
+          </div>
+          <% if (t.aiSummary) { %>
+            <div class="ai-review-panel">
+              <div class="ai-review-label">AI summary</div>
+              <p><%= t.aiSummary %></p>
+            </div>
+          <% } else { %>
+            <p><%= t.description %></p>
+          <% } %>
+          <div class="task-meta">
+            <span class="tag tag-category"><%= t.subject %></span>
+            <span class="tag tag-type">Level: <%= t.educationLevel %></span>
+            <span class="tag tag-type">Mode: <%= (t.sessionMode || "Live") === "Live" ? "Online" : "Offline" %></span>
+            <% if (t.duration) { %><span class="tag tag-reward">Duration: <%= t.duration %></span><% } %>
+            <span class="tag tag-category">Posted by: <%= t.postedByName %></span>
+          </div>
+          <div class="task-actions">
+            <% if (t.studentAccepted) { %>
+              <a href="/chat/<%= t._id %>" class="btn btn-chat">Open Chat</a>
+              <% if ((t.sessionMode || "Live") === "Live") { %>
+                <a href="/session/<%= t._id %>" class="btn btn-primary">Start Live Session</a>
+              <% } %>
+            <% } else { %>
+              <span style="font-size: 0.85rem; color: var(--color-muted);">Awaiting student connection</span>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
     <% } %>
-
-    <% tasks.forEach(t => { %>
-      <div class="task">
-        <div class="task-top">
-          <h3><%= t.title %></h3>
-          <span class="status-badge <%= t.status === 'In Progress' ? 'status-in-progress' : 'status-completed' %>">
-            <%= t.status %>
-          </span>
-        </div>
-
-        <p><%= t.description %></p>
-
-        <div class="task-meta">
-          <span class="tag tag-category">📂 <%= t.category %></span>
-          <span class="tag tag-type">🔖 <%= t.type %></span>
-          <span class="tag tag-reward">💰 ₹<%= t.reward %></span>
-          <span class="tag tag-category">👤 Posted by <%= t.postedByName %></span>
-        </div>
-
-        <div class="task-actions">
-          <a href="/chat/<%= t._id %>" class="btn btn-chat">💬 Open Chat</a>
-        </div>
-      </div>
-    <% }) %>
   </main>
 </body>
 </html>

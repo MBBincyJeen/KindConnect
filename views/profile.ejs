@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= profileUser.fullName %> — Profile</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="container">
+    <div class="profile-header-card">
+      <div class="profile-avatar-lg"><%= profileUser.fullName.charAt(0).toUpperCase() %></div>
+      <div class="profile-details">
+        <h2><%= profileUser.fullName %></h2>
+        <p>@<%= profileUser.username %></p>
+        <p>Location: <%= profileUser.locationName || "Unknown" %></p>
+        <div class="profile-badges">
+          <span class="badge badge-role"><%= profileUser.role %></span>
+          <span class="badge badge-level">Level: <%= profileUser.educationLevel %></span>
+          <span class="badge badge-gender">Gender: <%= profileUser.gender %></span>
+          <% if (profileUser.aadhaarVerified) { %>
+            <span class="badge badge-verified">Aadhaar Verified</span>
+          <% } else { %>
+            <span class="badge badge-unverified">Aadhaar Unverified</span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-section card">
+      <h3>About Me</h3>
+      <% if (isOwnProfile) { %>
+        <form action="/profile/update" method="POST">
+          <div class="form-group">
+            <textarea name="aboutMe" class="about-textarea" placeholder="Write about yourself, your qualifications, teaching style..." required><%= profileUser.aboutMe || "" %></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Save Bio Details</button>
+        </form>
+      <% } else { %>
+        <p style="white-space: pre-line; line-height: 1.6; font-size: 0.95rem; color: var(--color-dark-2);">
+          <%= profileUser.aboutMe || "No bio details shared yet." %>
+        </p>
+      <% } %>
+    </div>
+
+    <% if (profileUser.role === "Teacher") { %>
+      <div class="profile-section card">
+        <h3>Subject Expertise</h3>
+        <% if (isOwnProfile) { %>
+          <form action="/profile/update" method="POST" style="margin-top: 10px;">
+            <div class="form-group">
+              <label>Edit Your Taught Subjects</label>
+              <div class="subject-grid">
+                <% 
+                  const availableSubjects = [
+                    "Mathematics", "Physics", "Chemistry", "Biology", "English", "Hindi",
+                    "Social Studies", "Computer Science", "Economics", "Accountancy",
+                    "Business Studies", "History", "Geography", "Political Science", "Other"
+                  ];
+                  availableSubjects.forEach(s => {
+                    const isChecked = (profileUser.subjects || []).includes(s);
+                %>
+                  <label class="subject-chip <%= isChecked ? 'checked' : '' %>">
+                    <input type="checkbox" name="subjects" value="<%= s %>" <%= isChecked ? 'checked' : '' %>>
+                    <%= s %>
+                  </label>
+                <% }) %>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary">Update Subjects</button>
+          </form>
+        <% } else { %>
+          <div class="subjects-list" style="margin-top: 10px;">
+            <% (profileUser.subjects || []).forEach(s => { %>
+              <span class="tag tag-category" style="font-size: 0.9rem; padding: 6px 16px;"><%= s %></span>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="profile-section card">
+        <h3>Academic Certificates & Proofs</h3>
+
+        <% if (profileUser.certificates && profileUser.certificates.length > 0) { %>
+          <div class="cert-list">
+            <% profileUser.certificates.forEach(c => { %>
+              <div class="cert-item">
+                <a href="/uploads/<%= c.filename %>" target="_blank">File: <%= c.originalName %></a>
+                <% if (c.description) { %>
+                  <p class="cert-desc"><%= c.description %></p>
+                <% } else { %>
+                  <p class="cert-desc cert-muted">No description provided.</p>
+                <% } %>
+                <div class="cert-actions">
+                  <small style="color: var(--color-muted); margin-right: 12px; display: inline-flex; align-items: center;">
+                    Uploaded on: <%= new Date(c.uploadedAt).toLocaleDateString() %>
+                  </small>
+                  <% if (isOwnProfile) { %>
+                    <form action="/profile/delete-certificate/<%= c.filename %>" method="POST" style="display:inline;" onsubmit="return confirm('Remove this certificate?')">
+                      <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 0.78rem;">Delete</button>
+                    </form>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <p style="color: var(--color-muted);">No certificates uploaded yet.</p>
+        <% } %>
+
+        <% if (isOwnProfile) { %>
+          <form action="/profile/upload-certificate" method="POST" enctype="multipart/form-data" class="cert-upload-form">
+            <div class="form-group" style="margin:0; flex-grow:1;">
+              <input type="file" name="certificate" required accept=".pdf,image/*,.docx">
+            </div>
+            <div class="form-group" style="margin:0; flex-grow:1;">
+              <input type="text" name="certificateDescription" placeholder="Short description for this certificate">
+            </div>
+            <button type="submit" class="btn-upload">Upload Certificate</button>
+          </form>
+          <small style="display:block; margin-top:8px; color: var(--color-muted);">Supported formats: PDF, Images (JPEG/PNG), Word Docs (.docx)</small>
+        <% } %>
+      </div>
+    <% } %>
+  </main>
+
+  <script>
+    const chips = document.querySelectorAll(".subject-chip");
+    chips.forEach(chip => {
+      const cb = chip.querySelector("input");
+      if (cb) {
+        cb.addEventListener("change", () => {
+          chip.classList.toggle("checked", cb.checked);
+        });
+        chip.addEventListener("click", (e) => {
+          if (e.target !== cb) {
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event("change"));
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

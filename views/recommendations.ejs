@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teacher Recommendations — KindConnect</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="container">
+    <div class="recommendations-header">
+      <h2>Recommended Teachers for Your Post</h2>
+      <p style="color: var(--color-muted);">Based on same subject expertise, level match, and preferred gender selection.</p>
+      
+      <div class="task-summary request-review-summary">
+        <div>
+          <h4>Post title: "<%= task.title %>"</h4>
+          <% if (task.aiSummary) { %>
+            <div class="ai-review-panel compact">
+              <div class="ai-review-label">AI summary</div>
+              <p><%= task.aiSummary %></p>
+            </div>
+          <% } %>
+        </div>
+        <div class="task-meta">
+          <span class="tag tag-category">Subject: <%= task.subject %></span>
+          <span class="tag tag-type">Grade/Level: <%= task.educationLevel %></span>
+          <span class="tag tag-type">Mode: <%= (task.sessionMode || "Live") === "Live" ? "Online" : "Offline" %></span>
+          <% if (task.duration) { %><span class="tag tag-reward">Duration: <%= task.duration %></span><% } %>
+          <span class="tag tag-reward">Preferred Gender: <%= task.preferredGender %></span>
+          <span class="safety-pill <%= task.aiSafetyCheck && task.aiSafetyCheck.isSafe ? 'safety-safe' : 'safety-review' %>">
+            <%= task.aiSafetyCheck && task.aiSafetyCheck.isSafe ? 'Safe to publish' : 'Needs review' %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <% if (!teachers || teachers.length === 0) { %>
+      <div class="empty-state card">
+        <svg viewBox="0 0 24 24" style="width: 64px; height: 64px; fill: var(--color-muted); margin-bottom: 16px;">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+        <h3>No matching faculty found</h3>
+        <p style="margin-top: 8px; max-width: 480px; margin-left: auto; margin-right: auto;">
+          We couldn't find any teachers who match the exact subjects, grade levels, and gender preferences at this moment. You can view all posts or check back later once more educators register.
+        </p>
+        <a href="/dashboard" class="btn btn-secondary" style="margin-top: 20px;">Return to Dashboard</a>
+      </div>
+    <% } else { %>
+      <div class="teacher-grid">
+        <% teachers.forEach(teacher => { %>
+          <div class="teacher-card">
+            <div class="teacher-card-header">
+              <div class="teacher-card-avatar"><%= teacher.fullName.charAt(0).toUpperCase() %></div>
+              <div>
+                <div class="teacher-card-name"><%= teacher.fullName %></div>
+                <div class="teacher-card-meta">@<%= teacher.username %></div>
+              </div>
+            </div>
+            
+            <div class="profile-badges" style="margin: 0;">
+              <span class="badge badge-gender"><%= teacher.gender %></span>
+              <span class="badge badge-level">Level: <%= teacher.educationLevel %></span>
+              <% if (teacher.aadhaarVerified) { %>
+                <span class="badge badge-verified" style="font-size: 0.7rem; padding: 2px 8px;">Verified</span>
+              <% } %>
+            </div>
+
+            <!-- About Me Preview -->
+            <div class="teacher-card-about">
+              <%= teacher.aboutMe ? (teacher.aboutMe.substring(0, 110) + (teacher.aboutMe.length > 110 ? "..." : "")) : "No bio details shared yet." %>
+            </div>
+
+            <div class="teacher-card-subjects">
+              <% teacher.subjects.slice(0, 4).forEach(s => { %>
+                <span class="tag tag-category" style="font-size: 0.72rem; padding: 2px 8px;"><%= s %></span>
+              <% }) %>
+              <% if (teacher.subjects.length > 4) { %>
+                <span class="tag tag-type" style="font-size: 0.72rem; padding: 2px 8px;">+<%= teacher.subjects.length - 4 %> more</span>
+              <% } %>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--color-muted);">
+              Location: <%= teacher.locationName || "Unknown Location" %> • Credentials: <strong><%= teacher.certificates.length %></strong>
+            </div>
+
+            <div class="teacher-card-footer">
+              <div style="display: flex; gap: 8px;">
+                <a href="/profile/<%= teacher._id %>" class="btn btn-secondary" style="flex: 1; justify-content: center; font-size: 0.8rem; padding: 10px 0;">View Bio Profile</a>
+                <form action="/connect/<%= task._id %>/<%= teacher._id %>" method="POST" style="flex: 1.5; margin:0;">
+                  <button type="submit" class="btn-connect" style="font-size: 0.8rem; padding: 10px 0;">Connect Faculty</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>

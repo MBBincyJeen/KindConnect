@@ -3,67 +3,85 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Post a Task — KindConnect</title>
-  <meta name="description" content="Post a new task and get help from your community on KindConnect.">
+  <title>Add Tutoring Request — KindConnect</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <h1>KindConnect</h1>
-    <div class="nav">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/offer-help">Offer Help</a>
-      <a href="/your-tasks">Your Tasks</a>
-      <a href="/logout">Logout</a>
-    </div>
-  </header>
+  <%- include('partials/navbar') %>
 
-  <main class="container">
-    <div class="card" style="max-width: 640px; margin-left: auto; margin-right: auto;">
-      <h2>📝 Post a New Task</h2>
-      <form action="/add-task" method="POST" enctype="multipart/form-data">
+  <main class="form-wrap request-form-page">
+    <div class="form-card request-form-card">
+      <div class="form-heading">
+        <div>
+          <span class="eyebrow">Student request</span>
+          <h2>Post a Tutoring Request</h2>
+          <p>Share the learning need, session style, and timing so the right teacher can respond.</p>
+        </div>
+      </div>
 
-        <div class="form-group">
-          <label for="title">Task Title</label>
-          <input id="title" name="title" type="text" placeholder="e.g. Help with grocery shopping" required>
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
+
+      <form action="/add-task" method="POST">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="title">Title</label>
+            <input type="text" id="title" name="title" required placeholder="Need help with Algebra basics" value="<%= values.title || '' %>">
+          </div>
+
+          <div class="field full">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" required placeholder="Explain what kind of help you need, including chapters, exam goals, or special requirements..."><%= values.description || '' %></textarea>
+          </div>
+
+          <div class="field">
+            <label for="subject">Subject</label>
+            <select id="subject" name="subject" required>
+              <option value="">Select subject</option>
+              <% subjects.forEach(subject => { %>
+                <option value="<%= subject %>" <%= values.subject === subject ? 'selected' : '' %>><%= subject %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="educationLevel">Education Level</label>
+            <select id="educationLevel" name="educationLevel" required>
+              <option value="">Select level</option>
+              <% educationLevels.forEach(level => { %>
+                <option value="<%= level %>" <%= values.educationLevel === level ? 'selected' : '' %>><%= level %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="preferredGender">Preferred Gender</label>
+            <select id="preferredGender" name="preferredGender">
+              <option value="Any" <%= !values.preferredGender || values.preferredGender === 'Any' ? 'selected' : '' %>>Any</option>
+              <option value="Male" <%= values.preferredGender === 'Male' ? 'selected' : '' %>>Male</option>
+              <option value="Female" <%= values.preferredGender === 'Female' ? 'selected' : '' %>>Female</option>
+              <option value="Other" <%= values.preferredGender === 'Other' ? 'selected' : '' %>>Other</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="sessionMode">Session Mode</label>
+            <select id="sessionMode" name="sessionMode" required>
+              <option value="Live" <%= !values.sessionMode || values.sessionMode === 'Live' ? 'selected' : '' %>>Live Online Session</option>
+              <option value="In-Person" <%= values.sessionMode === 'In-Person' ? 'selected' : '' %>>In-Person Tutoring</option>
+            </select>
+          </div>
+
+          <div class="field full">
+            <label for="duration">Duration</label>
+            <input type="text" id="duration" name="duration" placeholder="Example: 2 weeks, 3 sessions, or 1 hour daily" value="<%= values.duration || '' %>">
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" placeholder="Describe what you need help with in detail…" required style="min-height:120px;"></textarea>
+        <div class="submit-row">
+          <button type="submit" class="btn btn-primary">Post Request</button>
         </div>
-
-        <div class="form-group">
-          <label for="category">Category</label>
-          <select id="category" name="category" required>
-            <option value="" disabled selected>Choose a category</option>
-            <% categories.forEach(c => { %>
-              <option value="<%= c %>"><%= c %></option>
-            <% }) %>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="type">Task Type</label>
-          <select id="type" name="type">
-            <option value="In-person">🏠 In-person</option>
-            <option value="Online">💻 Online</option>
-            <option value="Education">📚 Education</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="reward">Reward (₹) <span style="font-weight:400; color: var(--color-muted);">— optional</span></label>
-          <input id="reward" name="reward" type="number" min="0" placeholder="0">
-        </div>
-
-        <div class="form-group">
-          <label for="attachments">Attachments <span style="font-weight:400; color: var(--color-muted);">— optional, up to 5 files</span></label>
-          <input id="attachments" type="file" name="attachments" multiple
-            style="padding: 10px 16px; background: #fafbfc; border: 1.5px dashed var(--color-border); cursor: pointer;">
-        </div>
-
-        <button type="submit" style="width:100%; margin-top: 8px; padding: 14px;">Post Task →</button>
       </form>
     </div>
   </main>

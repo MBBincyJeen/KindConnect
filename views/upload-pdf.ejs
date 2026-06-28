@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Upload PDF — KindConnect</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="container">
+    <section class="page-header">
+      <h2>Upload PDF Document</h2>
+      <p>Upload a PDF and ask questions about its contents later.</p>
+    </section>
+
+    <% if (message) { %>
+      <div class="alert"><%= message %></div>
+    <% } %>
+
+    <form action="/pdf/upload" method="POST" enctype="multipart/form-data" class="card form-card">
+      <label for="pdfFile">Choose a PDF file</label>
+      <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" required>
+      <button type="submit" class="btn btn-primary">Upload and Index</button>
+    </form>
+
+    <section class="section">
+      <div class="section-header">
+        <h3>Your Documents</h3>
+      </div>
+
+      <% if (!documents || documents.length === 0) { %>
+        <div class="empty-state">
+          <p>No uploaded documents yet. Upload a PDF to get started.</p>
+        </div>
+      <% } else { %>
+        <div class="document-list">
+          <% documents.forEach(doc => { %>
+            <div class="document-card">
+              <div>
+                <strong><%= doc.originalName %></strong>
+                <p class="muted">Uploaded: <%= new Date(doc.uploadDate || doc.createdAt).toLocaleString() %></p>
+              </div>
+              <div class="document-actions">
+                <a href="/pdf/<%= doc._id %>/question" class="btn btn-secondary">Ask Question</a>
+                <span class="status-pill <%= doc.status === 'ready' ? 'status-pill-success' : 'status-pill-warning' %>"><%= doc.status %></span>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

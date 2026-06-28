@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ask About PDF — KindConnect</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="container">
+    <section class="page-header">
+      <h2>Ask about: <%= document.originalName %></h2>
+      <p class="muted">Questions are answered using only the content from this uploaded PDF.</p>
+    </section>
+
+    <% if (message) { %>
+      <div class="error"><%= message %></div>
+    <% } %>
+
+    <div class="pdf-grid">
+      <div class="pdf-main">
+        <form action="/pdf/<%= document._id %>/question" method="POST" class="card form-card">
+          <label for="question">Ask a question about this document</label>
+          <textarea id="question" name="question" rows="5" required placeholder="Type your question here..."><%= question %></textarea>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+            <button type="submit" class="btn btn-primary">Get Answer</button>
+            <a href="/pdf/list" class="btn btn-secondary">Back to PDFs</a>
+            <div style="margin-left:auto;color:var(--color-muted);font-size:0.9rem;">Document size: <strong><%= document.pageCount || '—' %></strong></div>
+          </div>
+        </form>
+
+        <% if (answer) { %>
+          <div class="card output-card">
+            <div class="section-header">
+              <h3>Answer</h3>
+              <div class="count-badge">Source: PDF</div>
+            </div>
+            <div class="answer-text"><%= answer %></div>
+          </div>
+        <% } %>
+      </div>
+
+      <aside class="pdf-sidebar card">
+        <div class="section-header">
+          <h3>Question History <span class="count-badge"><%= (history && history.length) || 0 %></span></h3>
+        </div>
+
+        <% if (!history || history.length === 0) { %>
+          <div class="empty-state">
+            <p>No questions yet — your asked questions will appear here.</p>
+          </div>
+        <% } else { %>
+          <div class="history-list">
+            <% history.slice().reverse().forEach(item => { %>
+              <div class="history-item">
+                <div class="history-row">
+                  <div class="history-question"><strong>Q:</strong> <span><%= item.question %></span></div>
+                  <div class="history-status">
+                    <% if (item.status === 'failed') { %>
+                      <span class="status-pill status-pill-failed">Failed</span>
+                    <% } else { %>
+                      <span class="status-pill status-pill-answered">Answered</span>
+                    <% } %>
+                  </div>
+                </div>
+                <div class="history-answer"><strong>A:</strong>
+                  <div class="history-answer-text"><%= item.answer || 'No answer (failed)' %></div>
+                </div>
+                <div class="history-meta"><small>Asked: <%= new Date(item.askedAt || item.createdAt).toLocaleString() %></small></div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>

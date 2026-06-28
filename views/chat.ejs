@@ -1,188 +1,281 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Chat - KindConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat Session — KindConnect</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <h1>KindConnect</h1>
-    <div class="nav">
-      <a href="/dashboard">Dashboard</a>
-      <a href="/your-tasks">Your Tasks</a>
-      <a href="/offer-help">Offer Help</a>
-      <a href="/logout">Logout</a>
-    </div>
-  </header>
+  <%- include('partials/navbar') %>
 
   <main class="container">
-    <div class="chat-container">
+    <div class="chat-container" style="max-width: 900px; margin: 20px auto;">
+      <!-- Chat Header -->
       <div class="chat-header">
         <div>
-          <h2><%= task.title %></h2>
-          <p>Poster: <strong><%= task.postedByName %></strong> | Helper: <strong><%= task.takenByName || "Not Assigned" %></strong></p>
+          <h2 style="font-size: 1.15rem; margin: 0; padding: 0; border: none; background: none; color: #fff;"><%= task.title %></h2>
+          <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: #b0bec5; font-weight: normal;"><%= task.description %></p>
         </div>
         <div class="chat-meta">
-          <div class="chat-sync-status" title="Connection status">
-            <div class="chat-sync-dot"></div>
-            <span>Live Sync</span>
-          </div>
-          <span class="chat-status-badge <%= task.status === 'Completed' ? 'completed' : 'in-progress' %>">
-            <%= task.status %>
-          </span>
+          <span class="chat-status-badge <%= task.status === 'In Progress' ? 'in-progress' : 'completed' %>"><%= task.status %></span>
+          <div class="chat-sync-status"><div class="chat-sync-dot"></div> Live Session</div>
         </div>
       </div>
 
-      <div class="chat-box">
-        <% if (!task.messages || task.messages.length === 0) { %>
+      <div class="chat-search-bar">
+        <input id="chatSearch" type="search" placeholder="Search chat messages, attachments, summaries..." aria-label="Search chat">
+        <button id="clearSearch" type="button">Clear</button>
+        <span id="searchCount" class="search-count">0 results</span>
+      </div>
+
+      <!-- Chat Messages Container -->
+      <div class="chat-box" id="chatBox">
+        <% if (messages.length === 0) { %>
           <div class="empty-chat-message">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
-            <p>No messages yet. Say hello to start the conversation!</p>
+            <svg viewBox="0 0 24 24" style="width: 52px; height: 52px; fill: #b2dfdb; margin-bottom: 12px;">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            </svg>
+            <p>Start your real-time chat connection here!</p>
           </div>
         <% } else { %>
-          <% task.messages.forEach(m => { %>
-            <div class="msg <%= m.senderName === username ? 'me' : 'them' %>">
-              <strong><%= m.senderName %></strong>
-              <% if (m.text) { %>
-                <p><%= m.text %></p>
+          <% messages.forEach(m => { %>
+            <div class="msg <%= m.sender.toString() === currentUserId ? 'me' : 'them' %>" data-search="<%= [m.senderName, m.message, m.fileName, (m.docAnalysis && m.docAnalysis.keywords ? m.docAnalysis.keywords.join(' ') : ''), (m.docAnalysis && m.docAnalysis.aiSummary) || ''].join(' ') %>">
+              <div class="msg-header">
+                <strong><%= m.senderName || 'User' %></strong>
+                <span class="sentiment-badge <%= m.sentiment || 'neutral' %>"><%= (m.sentiment || 'neutral').toUpperCase() %></span>
+              </div>
+              <div class="ai-overlay">
+                <span>AI sentiment confidence: <%= m.sentimentConfidence || '0.75' %></span>
+                <span><%= m.sentimentExplanation || 'Neutral or informational tone detected.' %></span>
+              </div>
+              <p><%= m.message %></p>
+              <% if (m.fileUrl) { %>
+                <a href="<%= m.fileUrl %>" target="_blank" class="attachment-link">Attachment: <%= m.fileName || 'Attachment Document' %></a>
               <% } %>
-              <% if (m.file) { %>
-                <a href="<%= m.file %>" target="_blank" class="attachment-link">
-                  📎 View Attachment
-                </a>
+              <% if (m.docAnalysis && (m.docAnalysis.fileType || m.docAnalysis.wordCount || m.docAnalysis.aiSummary || (m.docAnalysis.keywords && m.docAnalysis.keywords.length))) { %>
+                <div class="doc-analysis">
+                  <div class="doc-analysis-header"><strong>AI document analysis</strong> • confidence <%= m.docAnalysis.confidence || '0.80' %></div>
+                  <% if (m.docAnalysis.fileType) { %><span>Type: <%= m.docAnalysis.fileType %></span><% } %>
+                  <% if (m.docAnalysis.wordCount) { %><span>Words: <%= m.docAnalysis.wordCount %></span><% } %>
+                  <% if (m.docAnalysis.fileSizeKB) { %><span>Size: <%= m.docAnalysis.fileSizeKB %> KB</span><% } %>
+                  <% if (m.docAnalysis.keywords && m.docAnalysis.keywords.length) { %><span>Keywords: <%= m.docAnalysis.keywords.join(', ') %></span><% } %>
+                  <% if (m.docAnalysis.aiSummary) { %><div class="doc-summary"><strong>Attachment summary:</strong> <%= m.docAnalysis.aiSummary %></div><% } %>
+                </div>
               <% } %>
-              <small><%= new Date(m.createdAt).toLocaleString() %></small>
+              <small><%= new Date(m.createdAt || m.timestamp).toLocaleTimeString() %></small>
             </div>
           <% }) %>
         <% } %>
       </div>
-
-      <form action="/chat/<%= task._id %>" method="POST" enctype="multipart/form-data" class="chat-input-form" id="chatForm">
-        <label for="chat-file" class="chat-file-upload-label" title="Attach file">📎</label>
-        <input type="file" name="file" id="chat-file" class="chat-file-input">
-        
-        <div class="file-selected-indicator" id="file-indicator">
-          <span></span>
-          <button type="button" id="clear-file" title="Remove attachment">×</button>
-        </div>
-
-        <textarea name="text" class="chat-input-textarea" placeholder="Type a message... (Press Enter to send)" required></textarea>
-        
-        <button class="chat-send-btn" type="submit" title="Send message">➤</button>
+      
+      <!-- Typing Indicator -->
+      <div id="typingIndicator" style="padding: 4px 24px; font-size: 0.8rem; color: var(--color-muted); min-height: 20px; font-style: italic;"></div>
+      
+      <!-- Chat Input Form (supports text + files asynchronously via AJAX FormData) -->
+      <form id="chatForm" class="chat-input-form" enctype="multipart/form-data">
+        <label class="chat-file-upload-label" title="Attach file" for="fileInput" aria-label="Attach file">
+          <span class="icon-paperclip"></span>
+          <input type="file" name="file" id="fileInput" class="chat-file-input">
+        </label>
+        <textarea class="chat-input-textarea" id="messageInput" name="text" placeholder="Type your message here..." rows="1"></textarea>
+        <button type="submit" class="chat-send-btn" title="Send message" aria-label="Send message">
+          <span class="icon-send"></span>
+        </button>
       </form>
+      <div id="filePreview" style="padding: 6px 24px; font-size: 0.82rem; color: var(--color-primary); display: none; font-weight: 600; background: #f0f7f7; border-top: 1px solid var(--color-border);"></div>
     </div>
   </main>
-
+  
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const chatBox = document.querySelector('.chat-box');
-    const chatForm = document.getElementById('chatForm');
-    const textarea = document.querySelector('.chat-input-textarea');
-    const fileInput = document.getElementById('chat-file');
-    const fileIndicator = document.getElementById('file-indicator');
-    const clearFileBtn = document.getElementById('clear-file');
+    const socket = io();
+    const taskId = '<%= task._id %>';
+    const currentUserId = '<%= currentUserId %>';
+    const currentUsername = '<%= username %>';
+    const chatBox = document.getElementById('chatBox');
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('messageInput');
+    const fileInput = document.getElementById('fileInput');
+    const filePreview = document.getElementById('filePreview');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const chatSearch = document.getElementById('chatSearch');
+    const clearSearch = document.getElementById('clearSearch');
+    const searchCount = document.getElementById('searchCount');
+    
+    // Join task conversation room
+    socket.emit('joinRoom', taskId);
+    
+    // Auto-scroll to bottom of chat
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    function scrollToBottom() {
-      if (chatBox) {
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
+    function updateSearchCount(count, total) {
+      searchCount.textContent = count === total
+        ? `${total} messages`
+        : `${count} result${count === 1 ? '' : 's'} of ${total}`;
     }
 
-    // Scroll to bottom and focus on load
-    window.addEventListener('DOMContentLoaded', () => {
-      scrollToBottom();
-      if (textarea) textarea.focus();
+    function filterMessages() {
+      const query = chatSearch.value.trim().toLowerCase();
+      const messages = document.querySelectorAll('#chatBox .msg');
+      let visible = 0;
+
+      messages.forEach((message) => {
+        const text = (message.dataset.search || '').toLowerCase();
+        const match = query === '' || text.includes(query);
+        message.style.display = match ? '' : 'none';
+        if (match) visible += 1;
+      });
+
+      updateSearchCount(visible, messages.length);
+    }
+
+    chatSearch.addEventListener('input', filterMessages);
+    clearSearch.addEventListener('click', () => {
+      chatSearch.value = '';
+      filterMessages();
+      chatSearch.focus();
     });
 
-    // Submit form on Enter key (without Shift)
-    if (textarea) {
-      textarea.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          if (textarea.value.trim() || fileInput.files.length > 0) {
-            chatForm.submit();
-          }
-        }
-      });
-    }
+    filterMessages();
+    
+    // Auto-expand textarea height based on content
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = (input.scrollHeight) + 'px';
+    });
 
-    // File input selection UI helper
-    if (fileInput) {
-      fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-          const fileName = fileInput.files[0].name;
-          const shortName = fileName.length > 20 ? fileName.substring(0, 17) + '...' : fileName;
-          fileIndicator.querySelector('span').innerText = '📎 ' + shortName;
-          fileIndicator.classList.add('active');
-          textarea.removeAttribute('required'); // If there is an attachment, message text can be empty
-        } else {
-          fileIndicator.classList.remove('active');
-          textarea.setAttribute('required', 'required');
-        }
-      });
-    }
-
-    // Clear file selection
-    if (clearFileBtn) {
-      clearFileBtn.addEventListener('click', (e) => {
+    // Enter key submits the form, Shift+Enter inputs a new line
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        fileInput.value = '';
-        fileIndicator.classList.remove('active');
-        if (!textarea.value.trim()) {
-          textarea.setAttribute('required', 'required');
+        if (form.requestSubmit) {
+          form.requestSubmit();
+        } else {
+          form.dispatchEvent(new Event('submit', { cancelable: true }));
         }
-      });
+      }
+    });
+    
+    // Typing indicators
+    let typingTimeout;
+    input.addEventListener('input', () => {
+      socket.emit('typing', { taskId, username: currentUsername });
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        socket.emit('stopTyping', { taskId });
+      }, 1500);
+    });
+    
+    socket.on('userTyping', (data) => {
+      typingIndicator.textContent = `${data.username} is typing...`;
+    });
+    
+    socket.on('userStopTyping', () => {
+      typingIndicator.textContent = '';
+    });
+    
+    // Preview selected file name
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        filePreview.textContent = `Selected file: ${fileInput.files[0].name}`;
+        filePreview.style.display = 'block';
+      } else {
+        filePreview.style.display = 'none';
+      }
+    });
+    
+    // Send Message via AJAX
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text && fileInput.files.length === 0) return;
+      
+      const formData = new FormData();
+      if (text) {
+        formData.append('text', text);
+      }
+      if (fileInput.files.length > 0) {
+        formData.append('file', fileInput.files[0]);
+      }
+      
+      try {
+        const res = await fetch(`/chat/${taskId}/send`, {
+          method: 'POST',
+          body: formData,
+          credentials: 'include'
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+          input.value = '';
+          input.style.height = 'auto';
+          fileInput.value = '';
+          filePreview.style.display = 'none';
+          socket.emit('stopTyping', { taskId });
+          showToast('Message sent successfully');
+        }
+      } catch(err) {
+        console.error(err);
+      }
+    });
+    
+    // Receive real-time chat messages
+    socket.on('newMessage', (msg) => {
+      // Remove empty chat state if present
+      const emptyState = chatBox.querySelector('.empty-chat-message');
+      if (emptyState) emptyState.remove();
+      
+      const isMe = msg.senderId === currentUserId;
+      const div = document.createElement('div');
+      div.className = `msg ${isMe ? 'me' : 'them'}`;
+      
+      const searchText = [msg.senderName, msg.text, msg.fileName, msg.docAnalysis?.keywords?.join(' ') || '', msg.docAnalysis?.aiSummary || ''].join(' ');
+      div.dataset.search = searchText;
+      const senderName = escapeHtml(msg.senderName || 'User');
+      const messageText = escapeHtml(msg.text || '');
+      const sentiment = msg.sentiment || 'neutral';
+      const sentAt = msg.createdAt || msg.timestamp || Date.now();
+      let html = `<div class="msg-header"><strong>${senderName}</strong><span class="sentiment-badge ${sentiment}">${sentiment.toUpperCase()}</span></div><div class="ai-overlay"><span>AI sentiment confidence: ${escapeHtml(msg.sentimentConfidence || '0.75')}</span><span>${escapeHtml(msg.sentimentExplanation || 'Neutral or informational tone detected.')}</span></div><p>${messageText}</p>`;
+      if (msg.fileUrl) {
+        html += `<a href="${escapeHtml(msg.fileUrl)}" target="_blank" class="attachment-link">Attachment: ${escapeHtml(msg.fileName || 'Attachment')}</a>`;
+      }
+      if (msg.docAnalysis) {
+        html += `<div class="doc-analysis">`;
+        if (msg.docAnalysis.fileType) html += `<span>Type: ${escapeHtml(msg.docAnalysis.fileType)}</span>`;
+        if (msg.docAnalysis.wordCount) html += `<span>Words: ${msg.docAnalysis.wordCount}</span>`;
+        if (msg.docAnalysis.fileSizeKB) html += `<span>Size: ${msg.docAnalysis.fileSizeKB} KB</span>`;
+        if (msg.docAnalysis.keywords && msg.docAnalysis.keywords.length) html += `<span>Keywords: ${escapeHtml(msg.docAnalysis.keywords.join(', '))}</span>`;
+        if (msg.docAnalysis.aiSummary) html += `<div class="doc-summary"><strong>Attachment summary:</strong> ${escapeHtml(msg.docAnalysis.aiSummary)}</div>`;
+        html += `</div>`;
+      }
+      html += `<small>${new Date(sentAt).toLocaleTimeString()}</small>`;
+      
+      div.innerHTML = html;
+      chatBox.appendChild(div);
+      filterMessages();
+      
+      // Auto-scroll on new message
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
-    // Clear textarea and indicator on submit to prevent visual delay
-    chatForm.addEventListener('submit', () => {
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'chat-toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
       setTimeout(() => {
-        textarea.value = '';
-        fileInput.value = '';
-        fileIndicator.classList.remove('active');
-      }, 50);
-    });
-
-    // Polling script: checks for new messages every 4 seconds dynamically
-    let isPolling = true;
-    setInterval(() => {
-      if (!isPolling) return;
-      
-      fetch(window.location.href)
-        .then(response => {
-          if (!response.ok) throw new Error('Network response not ok');
-          return response.text();
-        })
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const newChatBox = doc.querySelector('.chat-box');
-          const currentChatBox = document.querySelector('.chat-box');
-          const newHeaderMeta = doc.querySelector('.chat-header');
-          const currentHeaderMeta = document.querySelector('.chat-header');
-
-          if (newChatBox && currentChatBox) {
-            // Check if contents are different before replacing
-            if (newChatBox.innerHTML.trim() !== currentChatBox.innerHTML.trim()) {
-              // Save scroll state before update to see if user is looking at history
-              const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
-              currentChatBox.innerHTML = newChatBox.innerHTML;
-              
-              if (isAtBottom) {
-                scrollToBottom();
-              }
-            }
-          }
-          
-          if (newHeaderMeta && currentHeaderMeta) {
-            if (newHeaderMeta.innerHTML.trim() !== currentHeaderMeta.innerHTML.trim()) {
-              currentHeaderMeta.innerHTML = newHeaderMeta.innerHTML;
-            }
-          }
-        })
-        .catch(err => console.warn('Sync warning:', err));
-    }, 4000);
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
   </script>
 </body>
 </html>
-

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Documents — KindConnect</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('partials/navbar') %>
+
+  <main class="container">
+    <section class="page-header">
+      <h2>My Uploaded PDFs</h2>
+      <p>View your indexed documents and ask questions from the ones you've uploaded.</p>
+    </section>
+
+    <section class="section">
+      <% if (!documents || documents.length === 0) { %>
+        <div class="empty-state">
+          <p>No documents uploaded yet. <a href="/pdf/upload">Upload a PDF</a> to start.</p>
+        </div>
+      <% } else { %>
+        <div class="document-list">
+          <% documents.forEach(doc => { %>
+            <div class="document-card">
+              <div>
+                <strong><%= doc.originalName %></strong>
+                <p class="muted">Uploaded: <%= new Date(doc.uploadDate || doc.createdAt).toLocaleString() %></p>
+                <p class="muted">Pages: <%= doc.pageCount %> • Chunks: <%= doc.chunkCount %></p>
+              </div>
+              <div class="document-actions">
+                <a href="/pdf/<%= doc._id %>/question" class="btn btn-secondary">Ask Question</a>
+                <span class="status-pill <%= doc.status === 'ready' ? 'status-pill-success' : 'status-pill-warning' %>"><%= doc.status %></span>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

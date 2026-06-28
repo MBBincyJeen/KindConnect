@@ -4,38 +4,275 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Register — KindConnect</title>
-  <meta name="description" content="Join KindConnect and start helping or getting help from your local community.">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body class="auth-body">
-  <div class="auth-card">
-    <div class="auth-logo"><span>KindConnect</span></div>
-    <p class="auth-tagline">Lend a hand. Get help. Build kindness.</p>
+  <main class="container">
+    <div class="auth-card register-card">
+      <div class="auth-logo"><span>KindConnect</span></div>
+      <p class="auth-tagline">Connecting learners with educators</p>
+      
+      <h2>Create Account</h2>
+      <p class="auth-subtitle">Join the KindConnect community</p>
 
-    <h2>Create account</h2>
-    <p class="auth-subtitle">Join your community today</p>
+      <% if (error) { %><div class="error">Error: <%= error %></div><% } %>
 
-    <% if (typeof error !== 'undefined' && error) { %>
-      <p class="error">⚠ <%= error %></p>
-    <% } %>
+      <form id="registerForm" action="/register" method="POST">
+        <div class="form-group">
+          <label for="fullName">Full Name</label>
+          <input id="fullName" name="fullName" placeholder="Enter your full name" required>
+        </div>
 
-    <form action="/register" method="POST">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" placeholder="Choose a username" required autocomplete="username">
-      </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" placeholder="Choose a password" required autocomplete="new-password">
-      </div>
-      <div class="form-group">
-        <label for="location">Location</label>
-        <input id="location" name="location" type="text" placeholder="Your city or area" required>
-      </div>
-      <button class="btn-primary" type="submit">Create Account →</button>
-    </form>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" name="username" placeholder="Choose a username" required>
+        </div>
 
-    <p class="auth-link">Already have an account? <a href="/login">Sign in</a></p>
-  </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="Create a password" required>
+        </div>
+
+        <div class="form-group">
+          <label>Role</label>
+          <div class="role-selector">
+            <label class="role-card" id="cardTeacher">
+              <input type="radio" name="role" value="Teacher" required>
+              <span class="role-icon-badge">T</span>
+              <span class="role-label">I'm a Teacher</span>
+              <span class="role-desc">Share your knowledge and mentor students</span>
+            </label>
+            <label class="role-card" id="cardStudent">
+              <input type="radio" name="role" value="Student" required>
+              <span class="role-icon-badge">S</span>
+              <span class="role-label">I'm a Student</span>
+              <span class="role-desc">Get tutoring and master your courses</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Gender</label>
+          <div class="gender-selector">
+            <label class="gender-option" id="genderMale">
+              <input type="radio" name="gender" value="Male" required>
+              Male
+            </label>
+            <label class="gender-option" id="genderFemale">
+              <input type="radio" name="gender" value="Female" required>
+              Female
+            </label>
+            <label class="gender-option" id="genderOther">
+              <input type="radio" name="gender" value="Other" required>
+              Other
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="educationLevel">Education Level / Grade</label>
+          <select id="educationLevel" name="educationLevel" required>
+            <option value="" disabled selected>Select level</option>
+            <% for (let i = 1; i <= 12; i++) { %>
+              <option value="<%= i %>th"><%= i %>th Grade</option>
+            <% } %>
+            <option value="UG">Undergraduate (UG)</option>
+            <option value="PG">Postgraduate (PG)</option>
+            <option value="PhD">Doctorate (PhD)</option>
+          </select>
+        </div>
+
+        <div class="form-group dynamic-section" id="subjectsSection">
+          <label>Subjects You Teach</label>
+          <div class="subject-grid">
+            <% 
+              const subjs = [
+                "Mathematics", "Physics", "Chemistry", "Biology", "English", "Hindi",
+                "Social Studies", "Computer Science", "Economics", "Accountancy",
+                "Business Studies", "History", "Geography", "Political Science", "Other"
+              ];
+              subjs.forEach(s => {
+            %>
+              <label class="subject-chip">
+                <input type="checkbox" name="subjects" value="<%= s %>">
+                <%= s %>
+              </label>
+            <% }) %>
+          </div>
+        </div>
+
+        <div class="form-group aadhaar-wrapper">
+          <label for="aadhaar-input">Aadhaar Number / VID</label>
+          <input id="aadhaar-input" name="aadhaarNumber" class="aadhaar-input" placeholder="XXXX XXXX XXXX" maxlength="14" required>
+          <span id="aadhaar-status" class="aadhaar-status"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="location">Location</label>
+          <div class="location-wrapper">
+            <input id="location" name="location" placeholder="Detecting location..." required>
+            <button type="button" id="btnDetect" class="btn-detect-location">Detect</button>
+          </div>
+          <input type="hidden" name="lat" id="lat">
+          <input type="hidden" name="lng" id="lng">
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: flex-start; gap: 8px; font-weight: normal; cursor: pointer;">
+            <input type="checkbox" required style="margin-top: 4px; accent-color: var(--color-primary);">
+            <span>I consent to Aadhaar-based validation check for academic verification.</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Register Account →</button>
+      </form>
+
+      <p class="auth-link">Already have an account? <a href="/login">Login</a></p>
+    </div>
+  </main>
+
+  <script src="/aadhaar-validator.js"></script>
+  <script>
+    // Setup role cards selection
+    const cardTeacher = document.getElementById("cardTeacher");
+    const cardStudent = document.getElementById("cardStudent");
+    const subjectsSection = document.getElementById("subjectsSection");
+
+    function updateRoleCards() {
+      const selected = document.querySelector('input[name="role"]:checked');
+      if (selected) {
+        if (selected.value === "Teacher") {
+          cardTeacher.classList.add("active");
+          cardStudent.classList.remove("active");
+          subjectsSection.classList.add("visible");
+          
+          // Make subjects checkboxes required if Teacher is selected (at least one)
+          document.querySelectorAll('input[name="subjects"]').forEach(cb => {
+            cb.removeAttribute("disabled");
+          });
+        } else {
+          cardStudent.classList.add("active");
+          cardTeacher.classList.remove("active");
+          subjectsSection.classList.remove("visible");
+          
+          // Disable subjects if Student is selected
+          document.querySelectorAll('input[name="subjects"]').forEach(cb => {
+            cb.checked = false;
+            cb.setAttribute("disabled", "true");
+          });
+        }
+      }
+    }
+
+    cardTeacher.addEventListener("click", () => {
+      cardTeacher.querySelector('input').checked = true;
+      updateRoleCards();
+    });
+
+    cardStudent.addEventListener("click", () => {
+      cardStudent.querySelector('input').checked = true;
+      updateRoleCards();
+    });
+
+    // Setup gender options selection
+    const genderOptions = document.querySelectorAll(".gender-option");
+    genderOptions.forEach(opt => {
+      opt.addEventListener("click", () => {
+        opt.querySelector("input").checked = true;
+        genderOptions.forEach(o => o.classList.remove("active"));
+        opt.classList.add("active");
+      });
+    });
+
+    // Setup subject chips
+    const chips = document.querySelectorAll(".subject-chip");
+    chips.forEach(chip => {
+      const cb = chip.querySelector("input");
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          chip.classList.add("checked");
+        } else {
+          chip.classList.remove("checked");
+        }
+      });
+      chip.addEventListener("click", (e) => {
+        if (e.target !== cb) {
+          cb.checked = !cb.checked;
+          cb.dispatchEvent(new Event("change"));
+        }
+      });
+    });
+
+    // Setup Aadhaar Validation
+    setupAadhaarValidation("aadhaar-input", "aadhaar-status");
+
+    // Form Submission check
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
+      const aadhaarVal = document.getElementById("aadhaar-input").value.replace(/\s+/g, "");
+      if (!validateAadhaar(aadhaarVal)) {
+        e.preventDefault();
+        alert("Please enter a valid Aadhaar number before submitting.");
+        return;
+      }
+
+      const role = document.querySelector('input[name="role"]:checked')?.value;
+      if (role === "Teacher") {
+        const checkedSubjects = document.querySelectorAll('input[name="subjects"]:checked');
+        if (checkedSubjects.length === 0) {
+          e.preventDefault();
+          alert("Please select at least one subject that you teach.");
+          return;
+        }
+      }
+    });
+
+    // Setup location auto-detect
+    async function reverseGeocode(lat, lng) {
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+        const res = await fetch(url, { headers: { "Accept": "application/json" } });
+        const data = await res.json();
+        return data.address?.city || data.address?.town || data.address?.village || data.display_name || "Unknown";
+      } catch {
+        return "Unknown";
+      }
+    }
+
+    const btnDetect = document.getElementById("btnDetect");
+    const inputLocation = document.getElementById("location");
+    const inputLat = document.getElementById("lat");
+    const inputLng = document.getElementById("lng");
+
+    function detectLocation() {
+      if (!navigator.geolocation) {
+        inputLocation.placeholder = "Geolocation not supported";
+        return;
+      }
+      
+      btnDetect.textContent = "Detecting...";
+      btnDetect.classList.add("detecting");
+      
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        inputLat.value = lat;
+        inputLng.value = lng;
+        
+        const locName = await reverseGeocode(lat, lng);
+        inputLocation.value = locName;
+        
+        btnDetect.textContent = "📍 Detect";
+        btnDetect.classList.remove("detecting");
+      }, (err) => {
+        console.error(err);
+        inputLocation.placeholder = "Location detection failed";
+        btnDetect.textContent = "📍 Detect";
+        btnDetect.classList.remove("detecting");
+      });
+    }
+
+    btnDetect.addEventListener("click", detectLocation);
+    window.addEventListener("load", detectLocation);
+  </script>
 </body>
 </html>
