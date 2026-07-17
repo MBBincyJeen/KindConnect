@@ -4,38 +4,69 @@ async function safeFetch(...args) {
   return fetch(...args);
 }
 
-async function generateAnswer({ question, contextText, apiKey, model = "gpt-4o-mini" }) {
+function buildFallbackAnswer(question, contextText) {
+  const cleanContext = (contextText || "").replace(/^No document excerpts were found for this document\.$/, "");
+  const lines = cleanContext
+    .split(/\n\n+/)
+    .map((line) => line.replace(/^Page\s*\d+:\s*/i, "").trim())
+    .filter(Boolean);
+
+  if (!lines.length) {
+    return "I could not find relevant content in the uploaded document yet. Please upload a PDF with readable text and try again.";
+  }
+
+  const bestLine = lines[0];
+  const shortQuestion = (question || "").trim();
+  if (!shortQuestion) {
+    return `Based on the document content, the most relevant excerpt is: ${bestLine.slice(0, 500)}`;
+  }
+
+  return `I couldn't reach Gemini right now, so I'm using the closest available document text. ${bestLine.slice(0, 500)}`;
+}
+
+async function generateAnswer({ question, contextText, apiKey, model = "gemini-2.0-flash" }) {
   if (!apiKey) {
-    throw new Error("Missing OpenAI API key. Set OPENAI_API_KEY in your environment.");
+    return buildFallbackAnswer(question, contextText);
   }
 
   const prompt = `You are a helpful assistant that answers questions using only the provided document excerpts. If the answer is not contained in the text, say "I don't know based on the uploaded documents."\n\nContext:\n${contextText}\n\nQuestion: ${question}\nAnswer:`;
 
-  const response = await safeFetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: "You are a helpful assistant that only uses the provided context." },
-        { role: "user", content: prompt },
-      ],
-      max_tokens: 450,
-      temperature: 0,
-    }),
-  });
+  try {
+    const response = await safeFetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 450,
+          },
+        }),
+      }
+    );
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(`Answer generation failed (${response.status}): ${data.error?.message || JSON.stringify(data)}`);
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(`Answer generation failed (${response.status}): ${data.error?.message || JSON.stringify(data)}`);
+    }
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+      throw new Error("Answer generation failed");
+    }
+
+    return data.candidates[0].content.parts.map((part) => part.text || "").join("\n").trim();
+  } catch (error) {
+    console.warn("Gemini answer generation unavailable, using local fallback:", error.message);
+    return buildFallbackAnswer(question, contextText);
   }
-  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-    throw new Error("Answer generation failed");
-  }
-  return data.choices[0].message.content.trim();
 }
 
 module.exports = { generateAnswer };

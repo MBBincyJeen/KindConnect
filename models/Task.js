@@ -35,6 +35,10 @@ const taskSchema = new mongoose.Schema(
       enum: ["Not Taken", "In Progress", "Completed"],
       default: "Not Taken",
     },
+    interestedTeachers: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
     studentAccepted: {
       type: Boolean,
       default: false,

@@ -4,35 +4,61 @@ async function safeFetch(...args) {
   return fetch(...args);
 }
 
-async function embedText(text, { provider = "openai", apiKey } = {}) {
+function buildFallbackEmbedding(text) {
+  const normalized = (text || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ");
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  const vector = new Array(64).fill(0);
+
+  tokens.forEach((token) => {
+    let hash = 0;
+    for (let i = 0; i < token.length; i += 1) {
+      hash = (hash * 31 + token.charCodeAt(i)) % 64;
+    }
+    vector[hash] += 1;
+  });
+
+  return vector;
+}
+
+async function embedText(text, { provider = "gemini", apiKey } = {}) {
   const normalized = text.trim();
   if (!normalized) return [];
 
-  if (provider === "openai") {
+  if (provider === "gemini") {
     if (!apiKey) {
-      throw new Error("Missing OpenAI API key. Set OPENAI_API_KEY in your environment.");
+      console.warn("Gemini API key missing, using local fallback embedding.");
+      return buildFallbackEmbedding(normalized);
     }
 
-    const response = await safeFetch("https://api.openai.com/v1/embeddings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        input: normalized,
-        model: "text-embedding-3-small",
-      }),
-    });
+    try {
+      const response = await safeFetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "models/text-embedding-004",
+            content: {
+              parts: [{ text: normalized }],
+            },
+          }),
+        }
+      );
 
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(`Embedding request failed (${response.status}): ${data.error?.message || JSON.stringify(data)}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`Embedding request failed (${response.status}): ${data.error?.message || JSON.stringify(data)}`);
+      }
+      if (!data.embedding || !Array.isArray(data.embedding.values)) {
+        throw new Error("Embedding generation failed");
+      }
+      return data.embedding.values;
+    } catch (error) {
+      console.warn("Gemini embedding unavailable, using local fallback embedding:", error.message);
+      return buildFallbackEmbedding(normalized);
     }
-    if (!data.data || !data.data[0] || !data.data[0].embedding) {
-      throw new Error("Embedding generation failed");
-    }
-    return data.data[0].embedding;
   }
 
   throw new Error(`Unsupported embedding provider: ${provider}`);

@@ -35,6 +35,7 @@ router.get("/pdf/upload", ensureAuth, async (req, res) => {
 });
 
 router.post("/pdf/upload", ensureAuth, upload.single("pdfFile"), async (req, res) => {
+  let document = null;
   try {
     if (!req.file) {
       const documents = await Document.find({ userId: req.session.user.id }).sort({ createdAt: -1 }).lean();
@@ -44,7 +45,7 @@ router.post("/pdf/upload", ensureAuth, upload.single("pdfFile"), async (req, res
     const filePath = req.file.path;
     const pdfData = await extractPdfText(filePath);
     const pages = pdfData.pages;
-    const document = await Document.create({
+    document = await Document.create({
       userId: req.session.user.id,
       originalName: req.file.originalname,
       filePath,
@@ -56,9 +57,11 @@ router.post("/pdf/upload", ensureAuth, upload.single("pdfFile"), async (req, res
       chunkCount: 0,
     });
 
+    const geminiKey = process.env.GEMINI_API_KEY || "";
+
     const chunks = chunkText(pages);
     const chunkPromises = chunks.map(async (chunk) => {
-      const embedding = await embedText(chunk.text, { apiKey: process.env.OPENAI_API_KEY });
+      const embedding = await embedText(chunk.text, { provider: "gemini", apiKey: geminiKey });
       return DocumentChunk.create({
         documentId: document._id,
         userId: req.session.user.id,
@@ -73,12 +76,18 @@ router.post("/pdf/upload", ensureAuth, upload.single("pdfFile"), async (req, res
 
     document.status = "ready";
     document.chunkCount = chunks.length;
+    document.errorMessage = "";
     await document.save();
 
     res.redirect("/pdf/list");
   } catch (err) {
     console.error(err);
     const documents = await Document.find({ userId: req.session.user.id }).sort({ createdAt: -1 }).lean();
+    if (document && document._id) {
+      document.status = "failed";
+      document.errorMessage = err.message;
+      await document.save().catch(() => {});
+    }
     res.render("upload-pdf", { user: req.session.user, documents, message: "Failed to process the PDF. Try again." });
   }
 });
@@ -107,20 +116,9 @@ router.post("/pdf/:id/question", ensureAuth, async (req, res) => {
       return res.render("pdf-question", { user: req.session.user, document: document.toObject(), history, answer: null, question: "" });
     }
 
-    const openAiKey = process.env.OPENAI_API_KEY;
-    if (!openAiKey) {
-      const history = await PdfQuestion.find({ documentId: document._id, userId: req.session.user.id }).sort({ askedAt: -1 }).lean();
-      return res.render("pdf-question", {
-        user: req.session.user,
-        document: document.toObject(),
-        history,
-        answer: null,
-        question,
-        message: "OpenAI API key is not configured. Set OPENAI_API_KEY and restart the server.",
-      });
-    }
+    const geminiKey = process.env.GEMINI_API_KEY || "";
 
-    const queryEmbedding = await embedText(question, { apiKey: openAiKey });
+    const queryEmbedding = await embedText(question, { provider: "gemini", apiKey: geminiKey });
     const topChunks = await searchChunks({ userId: req.session.user.id, documentId: document._id, queryEmbedding, topK: 5 });
     const contextText = topChunks.length
       ? topChunks.map((chunk) => `Page ${chunk.pageNumber}: ${chunk.text}`).join("\n\n")
@@ -129,7 +127,7 @@ router.post("/pdf/:id/question", ensureAuth, async (req, res) => {
     let answer;
     let status = "answered";
     try {
-      answer = await generateAnswer({ question, contextText, apiKey: process.env.OPENAI_API_KEY });
+      answer = await generateAnswer({ question, contextText, apiKey: geminiKey, provider: "gemini" });
     } catch (generationError) {
       console.error("Answer generation error:", generationError.message);
       answer = "Could not generate an answer from the uploaded document at this time.";

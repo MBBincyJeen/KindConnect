@@ -12,18 +12,25 @@
   <main class="container">
     <section class="page-header">
       <h2>Upload PDF Document</h2>
-      <p>Upload a PDF and ask questions about its contents later.</p>
+      <p>Upload a PDF and ask questions about its contents later. The app now works with Gemini when available and falls back locally when it is not.</p>
     </section>
 
     <% if (message) { %>
       <div class="alert"><%= message %></div>
     <% } %>
 
-    <form action="/pdf/upload" method="POST" enctype="multipart/form-data" class="card form-card">
-      <label for="pdfFile">Choose a PDF file</label>
-      <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" required>
-      <button type="submit" class="btn btn-primary">Upload and Index</button>
-    </form>
+    <div class="hero-panel card">
+      <div class="hero-copy">
+        <div class="hero-badge">Smart PDF Q&A</div>
+        <h3>Turn documents into searchable knowledge</h3>
+        <p>Upload a PDF, let it get indexed, and ask questions instantly from the document content.</p>
+      </div>
+      <form action="/pdf/upload" method="POST" enctype="multipart/form-data" class="upload-zone">
+        <label for="pdfFile" class="upload-label">Choose a PDF file</label>
+        <input type="file" name="pdfFile" id="pdfFile" accept="application/pdf" required>
+        <button type="submit" class="btn btn-primary">Upload and Index</button>
+      </form>
+    </div>
 
     <section class="section">
       <div class="section-header">
@@ -38,9 +45,10 @@
         <div class="document-list">
           <% documents.forEach(doc => { %>
             <div class="document-card">
-              <div>
+              <div class="document-info">
                 <strong><%= doc.originalName %></strong>
                 <p class="muted">Uploaded: <%= new Date(doc.uploadDate || doc.createdAt).toLocaleString() %></p>
+                <p class="muted">Pages: <%= doc.pageCount || 0 %> • Chunks: <%= doc.chunkCount || 0 %></p>
               </div>
               <div class="document-actions">
                 <a href="/pdf/<%= doc._id %>/question" class="btn btn-secondary">Ask Question</a>

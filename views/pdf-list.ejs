@@ -10,9 +10,14 @@
   <%- include('partials/navbar') %>
 
   <main class="container">
-    <section class="page-header">
-      <h2>My Uploaded PDFs</h2>
-      <p>View your indexed documents and ask questions from the ones you've uploaded.</p>
+    <section class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2>My Uploaded PDFs</h2>
+        <p>View your indexed documents and ask questions from the ones you've uploaded.</p>
+      </div>
+      <div>
+        <a href="/pdf/upload" class="btn btn-primary">Upload New PDF</a>
+      </div>
     </section>
 
     <section class="section">
@@ -24,10 +29,10 @@
         <div class="document-list">
           <% documents.forEach(doc => { %>
             <div class="document-card">
-              <div>
+              <div class="document-info">
                 <strong><%= doc.originalName %></strong>
                 <p class="muted">Uploaded: <%= new Date(doc.uploadDate || doc.createdAt).toLocaleString() %></p>
-                <p class="muted">Pages: <%= doc.pageCount %> • Chunks: <%= doc.chunkCount %></p>
+                <p class="muted">Pages: <%= doc.pageCount || 0 %> • Chunks: <%= doc.chunkCount || 0 %></p>
               </div>
               <div class="document-actions">
                 <a href="/pdf/<%= doc._id %>/question" class="btn btn-secondary">Ask Question</a>

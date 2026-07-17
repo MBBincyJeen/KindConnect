@@ -80,13 +80,37 @@
           </div>
           <div class="task-actions">
             <% if (t.status === "In Progress" && t.takenById) { %>
-              <a href="/chat/<%= t._id %>" class="btn btn-chat">Open</a>
+              <a href="/chat/<%= t._id %>" class="btn btn-chat">Open Chat</a>
               <% if ((t.sessionMode || "Live") === "Live") { %>
-                <a href="/session/<%= t._id %>" class="btn btn-primary">Session</a>
+                <a href="/session/<%= t._id %>" class="btn btn-primary">Live Session</a>
               <% } %>
               <span class="task-note">Matched with <strong><%= t.takenByName %></strong></span>
             <% } else if (t.status === "Not Taken") { %>
-              <a href="/recommendations/<%= t._id %>" class="btn btn-primary">Review</a>
+              <a href="/recommendations/<%= t._id %>" class="btn btn-primary">Get AI Recommendations</a>
+              <% if (t.interestedTeachers && t.interestedTeachers.length > 0) { %>
+                <div class="interested-teachers">
+                  <h4>Interested Teachers (<%= t.interestedTeachers.length %>)</h4>
+                  <div class="teacher-list">
+                    <% t.interestedTeachers.forEach(teacher => { %>
+                      <div class="teacher-card" style="border: 1px solid #ddd; padding: 10px; margin-top: 10px; border-radius: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <div>
+                            <strong><%= teacher.fullName || teacher.username %></strong>
+                            <p style="margin: 4px 0; font-size: 0.9em; color: #666;"><%= teacher.gender %> • <%= teacher.locationName || 'Unknown location' %></p>
+                            <p style="margin: 0; font-size: 0.85em; color: #888;">Level: <%= teacher.educationLevel %></p>
+                          </div>
+                          <div>
+                            <a href="/profile/<%= teacher._id %>" class="btn btn-secondary" style="font-size: 0.85em; padding: 6px 12px;">View Profile</a>
+                            <form action="/accept-teacher/<%= t._id %>/<%= teacher._id %>" method="POST" style="display:inline;">
+                              <button type="submit" class="btn btn-success" style="font-size: 0.85em; padding: 6px 12px; background-color: #28a745; color: white;">Accept</button>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    <% }) %>
+                  </div>
+                </div>
+              <% } %>
             <% } %>
 
             <% if (role === "Student" && t.status !== "Completed") { %>

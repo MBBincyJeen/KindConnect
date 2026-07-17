@@ -50,9 +50,14 @@
 
           <div class="task-actions">
             <% if (t.status === "Not Taken") { %>
-              <form action="/take-task/<%= t._id %>" method="POST">
-                <button type="submit" class="btn btn-primary">Take This</button>
-              </form>
+              <% const hasApplied = t.interestedTeachers && t.interestedTeachers.some(id => id.toString() === currentUser.id); %>
+              <% if (hasApplied) { %>
+                <span style="font-size: 0.85rem; color: #d97706; font-weight: 500; background: #fef3c7; padding: 4px 8px; border-radius: 4px;">Application Pending - Awaiting student connection</span>
+              <% } else { %>
+                <form action="/take-task/<%= t._id %>" method="POST">
+                  <button type="submit" class="btn btn-primary">Take This</button>
+                </form>
+              <% } %>
             <% } else if (t.takenById && currentUser && t.takenById.toString() === currentUser.id) { %>
               <% if (t.studentAccepted) { %>
                 <a href="/chat/<%= t._id %>" class="btn btn-chat">Open Chat</a>

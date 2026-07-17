@@ -471,7 +471,9 @@ app.post("/save-location", requireLogin, async (req, res) => {
 app.get("/dashboard", requireLogin, async (req, res) => {
   try {
     const user = await User.findById(req.session.user.id);
-    const posted = await Task.find({ postedById: req.session.user.id }).sort({ createdAt: -1 });
+    const posted = await Task.find({ postedById: req.session.user.id })
+      .populate("interestedTeachers", "username fullName role locationName educationLevel subjects gender")
+      .sort({ createdAt: -1 });
     const recentOthers = await Task.find({ postedById: { $ne: req.session.user.id } })
       .sort({ createdAt: -1 })
       .limit(5);
@@ -797,13 +799,12 @@ app.post("/take-task/:id", requireLogin, async (req, res) => {
     if (task.status !== "Not Taken") return res.redirect("/offer-help");
 
 
-    task.takenById = req.session.user.id;
-    task.takenByName = req.session.user.username;
-    task.takenByRole = req.session.user.role;
-    task.status = "In Progress";
-    task.studentAccepted = false;
-    await task.save();
+    if (task.interestedTeachers.includes(req.session.user.id)) {
+      return res.status(400).send("You have already offered support for this task");
+    }
 
+    task.interestedTeachers.push(req.session.user.id);
+    await task.save();
 
     const notif = new Notification({
       recipientId: task.postedById,
@@ -1121,7 +1122,7 @@ app.post("/delete-task/:id", requireLogin, async (req, res) => {
 });
 
 
-app.post("/accept-teacher/:taskId", requireLogin, async (req, res) => {
+app.post("/accept-teacher/:taskId/:teacherId", requireLogin, async (req, res) => {
   try {
     const task = await Task.findById(req.params.taskId);
     if (!task) return res.status(404).send("Task not found");
@@ -1129,30 +1130,54 @@ app.post("/accept-teacher/:taskId", requireLogin, async (req, res) => {
       return res.status(403).send("Only the task poster can accept the connection");
     }
 
+    const teacher = await User.findById(req.params.teacherId);
+    if (!teacher) return res.status(404).send("Teacher not found");
 
+    task.takenById = teacher._id;
+    task.takenByName = teacher.username;
+    task.takenByRole = teacher.role;
     task.studentAccepted = true;
+    task.status = "In Progress";
+    
+    // Save interested teachers to notify them, then clear the array
+    const otherTeachers = task.interestedTeachers.filter(id => id.toString() !== teacher._id.toString());
+    task.interestedTeachers = [];
+    
     await task.save();
 
+    // Notify accepted teacher
+    const notif = new Notification({
+      recipientId: teacher._id,
+      type: "offer_accepted",
+      taskId: task._id,
+      message: `Student ${req.session.user.username} accepted your tutoring offer for "${task.title}"`,
+    });
+    await notif.save();
 
-    // Notify teacher
-    if (task.takenById) {
-      const notif = new Notification({
-        recipientId: task.takenById,
-        type: "offer_accepted",
+    io.to(teacher._id.toString()).emit("newNotification", {
+      id: notif._id,
+      message: notif.message,
+      taskId: task._id.toString(),
+      createdAt: notif.createdAt,
+    });
+
+    // Notify other interested teachers
+    for (const otherTeacherId of otherTeachers) {
+      const otherNotif = new Notification({
+        recipientId: otherTeacherId,
+        type: "offer_rejected",
         taskId: task._id,
-        message: `Student ${req.session.user.username} accepted your tutoring offer for "${task.title}"`,
+        message: `The task "${task.title}" was allocated to another teacher.`,
       });
-      await notif.save();
+      await otherNotif.save();
 
-
-      io.to(task.takenById.toString()).emit("newNotification", {
-        id: notif._id,
-        message: notif.message,
+      io.to(otherTeacherId.toString()).emit("newNotification", {
+        id: otherNotif._id,
+        message: otherNotif.message,
         taskId: task._id.toString(),
-        createdAt: notif.createdAt,
+        createdAt: otherNotif.createdAt,
       });
     }
-
 
     res.redirect("/dashboard");
   } catch (err) {
