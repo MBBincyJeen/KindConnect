@@ -28,7 +28,21 @@
   // Socket connection for notifications
   const notifSocket = io();
   notifSocket.emit('joinUserRoom', '<%= currentUser.id %>');
-  
+
+  // Socket.IO reconnect handling
+  notifSocket.on('connect', () => {
+    notifSocket.emit('joinUserRoom', '<%= currentUser.id %>');
+  });
+
+  notifSocket.on('disconnect', () => {
+    // Could show a subtle offline indicator
+  });
+
+  notifSocket.on('reconnect', () => {
+    notifSocket.emit('joinUserRoom', '<%= currentUser.id %>');
+    fetchNotifCount();
+  });
+
   // Fetch notification count
   async function fetchNotifCount() {
     try {

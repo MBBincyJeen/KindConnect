@@ -40,6 +40,13 @@ const userSchema = new mongoose.Schema({
     default: [],
   },
 
+  blockedUsers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+
   locationName: { type: String, default: "Unknown" },
   location: {
     type: {

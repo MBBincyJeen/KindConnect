@@ -5,6 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chat Session — KindConnect</title>
   <link rel="stylesheet" href="/styles.css">
+  <style>
+    .tone-flag {
+      display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem;
+      font-weight: 600; margin-left: 4px;
+    }
+    .tone-flag.urgency { background: #fff3cd; color: #856404; }
+    .tone-flag.gratitude { background: #d4edda; color: #155724; }
+    .tone-flag.frustration { background: #f8d7da; color: #721c24; }
+    .delivery-status { font-size: 0.7rem; margin-left: 4px; }
+    .delivery-status.sent { color: #999; }
+    .delivery-status.delivered { color: #666; }
+    .delivery-status.read { color: #53bdeb; }
+    .load-more-btn {
+      display: block; margin: 12px auto; padding: 8px 20px;
+      background: var(--color-primary, #26a69a); color: #fff; border: none;
+      border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    }
+    .load-more-btn:hover { background: #2bbbad; }
+    .tone-disclaimer { font-size: 0.7rem; color: #999; font-style: italic; padding: 4px 24px; }
+  </style>
 </head>
 <body>
   <%- include('partials/navbar') %>
@@ -31,6 +51,9 @@
 
       <!-- Chat Messages Container -->
       <div class="chat-box" id="chatBox">
+        <% if (typeof hasMore !== 'undefined' && hasMore) { %>
+          <button id="loadMoreBtn" class="load-more-btn" data-before="<%= messages.length > 0 ? messages[0]._id : '' %>">Load older messages</button>
+        <% } %>
         <% if (messages.length === 0) { %>
           <div class="empty-chat-message">
             <svg viewBox="0 0 24 24" style="width: 52px; height: 52px; fill: #b2dfdb; margin-bottom: 12px;">
@@ -43,15 +66,15 @@
             <div class="msg <%= m.sender.toString() === currentUserId ? 'me' : 'them' %>" data-search="<%= [m.senderName, m.message, m.fileName, (m.docAnalysis && m.docAnalysis.keywords ? m.docAnalysis.keywords.join(' ') : ''), (m.docAnalysis && m.docAnalysis.aiSummary) || ''].join(' ') %>">
               <div class="msg-header">
                 <strong><%= m.senderName || 'User' %></strong>
-                <span class="sentiment-badge <%= m.sentiment || 'neutral' %>"><%= (m.sentiment || 'neutral').toUpperCase() %></span>
-              </div>
-              <div class="ai-overlay">
-                <span>AI sentiment confidence: <%= m.sentimentConfidence || '0.75' %></span>
-                <span><%= m.sentimentExplanation || 'Neutral or informational tone detected.' %></span>
+                <% if (m.toneFlags && m.toneFlags.length > 0) { %>
+                  <% m.toneFlags.forEach(flag => { %>
+                    <span class="tone-flag <%= flag.type %>"><%= flag.label %></span>
+                  <% }) %>
+                <% } %>
               </div>
               <p><%= m.message %></p>
               <% if (m.fileUrl) { %>
-                <a href="<%= m.fileUrl %>" target="_blank" class="attachment-link">Attachment: <%= m.fileName || 'Attachment Document' %></a>
+                <a href="/files/<%= m._id %>" target="_blank" class="attachment-link">Attachment: <%= m.fileName || 'Attachment Document' %></a>
               <% } %>
               <% if (m.docAnalysis && (m.docAnalysis.fileType || m.docAnalysis.wordCount || m.docAnalysis.aiSummary || (m.docAnalysis.keywords && m.docAnalysis.keywords.length))) { %>
                 <div class="doc-analysis">
@@ -64,6 +87,15 @@
                 </div>
               <% } %>
               <small><%= new Date(m.createdAt || m.timestamp).toLocaleTimeString() %></small>
+              <span class="delivery-status <%= m.deliveryStatus || 'sent' %>">
+                <% if (m.deliveryStatus === 'read') { %>
+                  <span title="Read">&#10003;&#10003;</span>
+                <% } else if (m.deliveryStatus === 'delivered') { %>
+                  <span title="Delivered">&#10003;&#10003;</span>
+                <% } else { %>
+                  <span title="Sent">&#10003;</span>
+                <% } %>
+              </span>
             </div>
           <% }) %>
         <% } %>
@@ -84,6 +116,7 @@
         </button>
       </form>
       <div id="filePreview" style="padding: 6px 24px; font-size: 0.82rem; color: var(--color-primary); display: none; font-weight: 600; background: #f0f7f7; border-top: 1px solid var(--color-border);"></div>
+      <p class="tone-disclaimer">Tone indicators are AI-generated suggestions and may not always reflect true intent. Use them as a guide, not a judgment.</p>
     </div>
   </main>
   
@@ -220,6 +253,65 @@
       }
     });
     
+    // Pagination: Load older messages
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', async () => {
+        const beforeId = loadMoreBtn.dataset.before;
+        if (!beforeId) return;
+        try {
+          const res = await fetch(`/api/messages/${taskId}?before=${beforeId}&limit=20`);
+          const olderMessages = await res.json();
+          if (olderMessages.length === 0) {
+            loadMoreBtn.textContent = 'No more messages';
+            loadMoreBtn.disabled = true;
+            return;
+          }
+          const fragment = document.createDocumentFragment();
+          olderMessages.forEach(m => {
+            const div = document.createElement('div');
+            div.className = `msg ${m.sender.toString() === currentUserId ? 'me' : 'them'}`;
+            const searchText = [m.senderName, m.message, m.fileName, m.docAnalysis?.keywords?.join(' ') || '', m.docAnalysis?.aiSummary || ''].join(' ');
+            div.dataset.search = searchText;
+            const senderName = escapeHtml(m.senderName || 'User');
+            const messageText = escapeHtml(m.message || '');
+            let toneFlagsHtml = '';
+            if (m.toneFlags && m.toneFlags.length > 0) {
+              m.toneFlags.forEach(flag => {
+                toneFlagsHtml += `<span class="tone-flag ${escapeHtml(flag.type)}">${escapeHtml(flag.label)}</span>`;
+              });
+            }
+            let html = `<div class="msg-header"><strong>${senderName}</strong>${toneFlagsHtml}</div><p>${messageText}</p>`;
+            if (m.fileUrl) {
+              html += `<a href="/files/${m._id}" target="_blank" class="attachment-link">Attachment: ${escapeHtml(m.fileName || 'Attachment')}</a>`;
+            }
+            if (m.docAnalysis) {
+              html += `<div class="doc-analysis">`;
+              if (m.docAnalysis.fileType) html += `<span>Type: ${escapeHtml(m.docAnalysis.fileType)}</span>`;
+              if (m.docAnalysis.wordCount) html += `<span>Words: ${m.docAnalysis.wordCount}</span>`;
+              if (m.docAnalysis.fileSizeKB) html += `<span>Size: ${m.docAnalysis.fileSizeKB} KB</span>`;
+              if (m.docAnalysis.keywords && m.docAnalysis.keywords.length) html += `<span>Keywords: ${escapeHtml(m.docAnalysis.keywords.join(', '))}</span>`;
+              if (m.docAnalysis.aiSummary) html += `<div class="doc-summary"><strong>Attachment summary:</strong> ${escapeHtml(m.docAnalysis.aiSummary)}</div>`;
+              html += `</div>`;
+            }
+            const sentAt = m.createdAt || m.timestamp || Date.now();
+            html += `<small>${new Date(sentAt).toLocaleTimeString()}</small>`;
+            const deliveryStatus = m.deliveryStatus || 'sent';
+            let deliveryIcon = '&#10003;';
+            if (deliveryStatus === 'read' || deliveryStatus === 'delivered') deliveryIcon = '&#10003;&#10003;';
+            html += `<span class="delivery-status ${deliveryStatus}" title="${deliveryStatus.charAt(0).toUpperCase() + deliveryStatus.slice(1)}">${deliveryIcon}</span>`;
+            div.innerHTML = html;
+            fragment.appendChild(div);
+          });
+          chatBox.insertBefore(fragment, chatBox.querySelector('.msg'));
+          loadMoreBtn.dataset.before = olderMessages[0]._id;
+          loadMoreBtn.textContent = 'Load older messages';
+        } catch(err) {
+          console.error('Failed to load older messages', err);
+        }
+      });
+    }
+
     // Receive real-time chat messages
     socket.on('newMessage', (msg) => {
       // Remove empty chat state if present
@@ -234,11 +326,16 @@
       div.dataset.search = searchText;
       const senderName = escapeHtml(msg.senderName || 'User');
       const messageText = escapeHtml(msg.text || '');
-      const sentiment = msg.sentiment || 'neutral';
+      let toneFlagsHtml = '';
+      if (msg.toneFlags && msg.toneFlags.length > 0) {
+        msg.toneFlags.forEach(flag => {
+          toneFlagsHtml += `<span class="tone-flag ${escapeHtml(flag.type)}">${escapeHtml(flag.label)}</span>`;
+        });
+      }
       const sentAt = msg.createdAt || msg.timestamp || Date.now();
-      let html = `<div class="msg-header"><strong>${senderName}</strong><span class="sentiment-badge ${sentiment}">${sentiment.toUpperCase()}</span></div><div class="ai-overlay"><span>AI sentiment confidence: ${escapeHtml(msg.sentimentConfidence || '0.75')}</span><span>${escapeHtml(msg.sentimentExplanation || 'Neutral or informational tone detected.')}</span></div><p>${messageText}</p>`;
+      let html = `<div class="msg-header"><strong>${senderName}</strong>${toneFlagsHtml}</div><p>${messageText}</p>`;
       if (msg.fileUrl) {
-        html += `<a href="${escapeHtml(msg.fileUrl)}" target="_blank" class="attachment-link">Attachment: ${escapeHtml(msg.fileName || 'Attachment')}</a>`;
+        html += `<a href="/files/${escapeHtml(msg._id || msg.messageId || '')}" target="_blank" class="attachment-link">Attachment: ${escapeHtml(msg.fileName || 'Attachment')}</a>`;
       }
       if (msg.docAnalysis) {
         html += `<div class="doc-analysis">`;
@@ -250,13 +347,36 @@
         html += `</div>`;
       }
       html += `<small>${new Date(sentAt).toLocaleTimeString()}</small>`;
+      const deliveryStatus = msg.deliveryStatus || 'sent';
+      let deliveryIcon = '&#10003;';
+      if (deliveryStatus === 'read' || deliveryStatus === 'delivered') deliveryIcon = '&#10003;&#10003;';
+      html += `<span class="delivery-status ${deliveryStatus}" title="${deliveryStatus.charAt(0).toUpperCase() + deliveryStatus.slice(1)}">${deliveryIcon}</span>`;
       
       div.innerHTML = html;
       chatBox.appendChild(div);
       filterMessages();
       
+      // Emit delivery confirmation for messages from others
+      if (!isMe) {
+        socket.emit('messageDelivered', { messageId: msg._id || msg.messageId, taskId });
+      }
+
       // Auto-scroll on new message
       chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    // Socket.IO reconnect handling
+    socket.on('connect', () => {
+      socket.emit('joinRoom', taskId);
+    });
+
+    socket.on('disconnect', (reason) => {
+      typingIndicator.textContent = 'Reconnecting...';
+    });
+
+    socket.on('reconnect', () => {
+      socket.emit('joinRoom', taskId);
+      typingIndicator.textContent = '';
     });
     
     function escapeHtml(text) {

@@ -7,13 +7,11 @@ const messageSchema = new mongoose.Schema({
   message: { type: String, required: true },
   fileUrl: { type: String },
   fileName: { type: String },
-  sentiment: {
-    type: String,
-    enum: ["positive", "neutral", "negative"],
-    default: "neutral",
-  },
-  sentimentConfidence: { type: String, default: "0.75" },
-  sentimentExplanation: { type: String, default: "Neutral tone detected." },
+  // NEW: Replaces old sentiment fields
+  toneFlags: [{
+    type: { type: String },
+    label: { type: String },
+  }],
   docAnalysis: {
     fileType: String,
     wordCount: Number,
@@ -29,7 +27,19 @@ const messageSchema = new mongoose.Schema({
       checkedAt: Date,
     },
   },
+  // NEW: Delivery and read states
+  deliveryStatus: {
+    type: String,
+    enum: ["sent", "delivered", "read"],
+    default: "sent",
+  },
+  readBy: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    readAt: { type: Date, default: Date.now },
+  }],
   timestamp: { type: Date, default: Date.now },
 });
+
+messageSchema.index({ taskId: 1, timestamp: -1 });
 
 module.exports = mongoose.model("Message", messageSchema);

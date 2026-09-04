@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Error — KindConnect</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .error-page {
+      max-width: 600px;
+      margin: 80px auto;
+      text-align: center;
+      padding: 40px;
+    }
+    .error-page h1 { color: #e53935; font-size: 2rem; margin-bottom: 16px; }
+    .error-page p { color: #666; font-size: 1.1rem; margin-bottom: 24px; }
+    .error-page a { color: var(--color-primary); text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="error-page">
+    <h1>Something went wrong</h1>
+    <p><%= message || 'An unexpected error occurred.' %></p>
+    <a href="/dashboard">← Back to Dashboard</a>
+  </div>
+</body>
+</html>
